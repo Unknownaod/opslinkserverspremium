@@ -209,11 +209,7 @@ for (let i = 0; i < 120; i++) {
 
 /* ===== AUTH ===== */
 const token = localStorage.getItem('opslinkToken');
-
-if (!token) {
-  // No token stored → redirect to landing page
-  window.location.href = 'index.html';
-}
+if (!token) window.location.href = 'index.html';
 
 function logout() {
   localStorage.removeItem('opslinkToken');
@@ -222,22 +218,15 @@ function logout() {
 
 /* ===== HELPERS ===== */
 function parseJwt(token) {
-  try {
-    return JSON.parse(atob(token.split('.')[1]));
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(atob(token.split('.')[1])); }
+  catch { return null; }
 }
 
 async function fetchWithAuth(url, options = {}) {
-  options.headers = {
-    ...options.headers,
-    'Authorization': `Bearer ${token}`
-  };
+  options.headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
   const res = await fetch(url, options);
 
   if (res.status === 401) {
-    // Token invalid / expired / tokenVersion mismatch
     logout();
     throw new Error('Unauthorized');
   }
@@ -255,33 +244,26 @@ async function fetchWithAuth(url, options = {}) {
     const decoded = parseJwt(token);
     if (!decoded?.discordUsername) throw new Error('Invalid token');
 
-    // Fetch role
-    const roleRes = await fetchWithAuth(
-      `https://opslinkservers-backend.onrender.com/servers/role/${encodeURIComponent(decoded.discordUsername)}`
-    );
+    // Get user role
+    const roleRes = await fetch(`https://opslinkservers-backend.onrender.com/servers/role/${encodeURIComponent(decoded.discordUsername)}`);
+    if (!roleRes.ok) throw new Error('Failed to get user role');
     const roleData = await roleRes.json();
     const isAdmin = roleData.role === 'admin';
 
-    // Fetch servers
+    // Choose endpoint
     const endpoint = isAdmin
-      ? 'https://opslinkservers-backend.onrender.com/servers'
+      ? 'https://opslinkservers-backend.onrender.com/servers/all'
       : 'https://opslinkservers-backend.onrender.com/servers/mine';
 
-    const serversRes = await fetchWithAuth(endpoint);
-    let servers = await serversRes.json();
-
-    // Admins only see approved servers
-    if (isAdmin) servers = servers.filter(s => s.status === 'approved');
+    const res = await fetchWithAuth(endpoint);
+    const servers = await res.json();
 
     if (!servers.length) {
-      container.innerHTML = `
-        <div class="empty">
-          No servers found.
-        </div>`;
+      container.innerHTML = `<div class="empty">No servers found.</div>`;
       return;
     }
 
-    // Render server cards
+    // Render servers
     servers.forEach(s => {
       const card = document.createElement('div');
       card.className = 'card';
@@ -311,7 +293,6 @@ async function fetchWithAuth(url, options = {}) {
 
   } catch (err) {
     console.error('Error loading servers:', err);
-    // Any error → remove token & redirect to landing page
     logout();
   }
 })();
