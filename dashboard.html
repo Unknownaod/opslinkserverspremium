@@ -317,12 +317,36 @@ canvas { height: 260px!important; }
 </div>
 
 <script>
+/* =========================
+   STARS GENERATOR
+========================= */
+const starsContainer = document.querySelector('.stars');
+const starCount = 120;
+
+for (let i = 0; i < starCount; i++) {
+  const star = document.createElement('div');
+  star.classList.add('star');
+  const size = Math.random() * 3 + 1;
+  star.style.width = `${size}px`;
+  star.style.height = `${size}px`;
+  star.style.top = `${Math.random() * 100}%`;
+  star.style.left = `${Math.random() * 100}%`;
+  star.style.animationDuration = `${Math.random() * 5 + 3}s`;
+  starsContainer.appendChild(star);
+}
+
+/* =========================
+   AUTH / GLOBALS
+========================= */
 const token = localStorage.getItem('opslinkToken');
 if (!token) location.href = 'login.html';
 
 let serverId = new URLSearchParams(location.search).get('server');
 const BACKEND = 'https://opslinkservers-backend.onrender.com';
 
+/* =========================
+   ELEMENTS
+========================= */
 const elements = {
   members: document.getElementById('members'),
   messages: document.getElementById('messages'),
@@ -342,8 +366,32 @@ const elements = {
   afkMembers: document.getElementById('afkMembers'),
 
   topChannels: document.getElementById('topChannels'),
-  topMembers: document.getElementById('topMembers')
+  topMembers: document.getElementById('topMembers'),
+
+  activityChart: document.getElementById('activityChart')?.getContext('2d'),
+  messagesChart: document.getElementById('messagesChart')?.getContext('2d'),
+  membersChart: document.getElementById('membersChart')?.getContext('2d'),
+  voiceChart: document.getElementById('voiceChart')?.getContext('2d')
 };
+
+let chartInstances = {};
+
+/* =========================
+   HELPERS
+========================= */
+function nav(section) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(section).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function setRange(r) {
+  range = r;
+  document.querySelectorAll('.time button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  loadAnalytics();
+}
 
 function renderDelta(elem, value) {
   const abs = Math.abs(value);
@@ -354,6 +402,9 @@ function renderDelta(elem, value) {
   elem.className = 'delta ' + (value >= 0 ? 'up' : 'down');
 }
 
+/* =========================
+   LOAD GUILD INFO
+========================= */
 async function loadGuildInfo() {
   try {
     const user = JSON.parse(localStorage.getItem('opslinkUser') || '{}');
@@ -378,11 +429,14 @@ async function loadGuildInfo() {
 
     return true;
   } catch (err) {
-    console.error(err);
+    console.error('Failed to load server/user info:', err);
     return false;
   }
 }
 
+/* =========================
+   LOAD ANALYTICS
+========================= */
 async function loadAnalytics() {
   try {
     const res = await fetch(`${BACKEND}/api/analytics/${serverId}?range=7d`, {
@@ -421,19 +475,25 @@ async function loadAnalytics() {
       elements.topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.count}</span></div>`;
     });
 
+    // TODO: Add charts if needed
+    // (Use Chart.js logic from your original script)
   } catch (err) {
     console.error('Analytics error:', err);
   }
 }
 
+/* =========================
+   INIT + AUTO REFRESH
+========================= */
 (async () => {
   const ok = await loadGuildInfo();
   if (ok) loadAnalytics();
 })();
 
-// auto refresh every 30s
+// refresh every 30s
 setInterval(loadAnalytics, 30000);
 </script>
+
 
 
 </body>
