@@ -131,6 +131,7 @@ canvas { height: 260px!important; }
   </div>
 </div>
 
+<!-- Overview -->
 <div id="overview" class="section active">
   <div class="grid">
     <div class="card">
@@ -190,28 +191,8 @@ canvas { height: 260px!important; }
     </div>
   </div>
 </div>
-  <div id="settingPage" class="section">
-  <h2>Settings</h2>
 
-  <!-- Server Info Card -->
-  <div class="card full" style="margin-bottom: 24px;">
-    <h3>Server Info</h3>
-    <div class="list" style="gap: 12px;">
-      <div class="row">
-        <span>Server Name:</span>
-        <strong id="settingServerName">—</strong>
-      </div>
-      <div class="row">
-        <span>Server ID:</span>
-        <strong id="settingServerId">—</strong>
-      </div>
-      <div class="row">
-        <span>Server Icon:</span>
-        <img id="settingServerIcon" src="assets/avatar.png" alt="Server Icon" style="width:36px; height:36px; border-radius:8px; border:1px solid var(--border);">
-      </div>
-    </div>
-  </div>
-
+<!-- Settings -->
 <div id="settingPage" class="section">
   <h2>Settings</h2>
 
@@ -255,10 +236,10 @@ canvas { height: 260px!important; }
   </div>
 </div>
 
+<!-- Other Sections -->
 <div id="messages" class="section"><canvas id="messagesChart"></canvas></div>
 <div id="membersPage" class="section"><canvas id="membersChart"></canvas></div>
 <div id="voicePage" class="section"><canvas id="voiceChart"></canvas></div>
-</div>
 
 <script>
 // ---------------------------
@@ -321,17 +302,8 @@ function nav(section, event) {
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
 
-  // Update page title
-  const titles = {
-    overview: 'Overview',
-    messages: 'Messages',
-    membersPage: 'Members',
-    voicePage: 'Voice',
-    settingPage: 'Settings'
-  };
+  const titles = { overview: 'Overview', messages: 'Messages', membersPage: 'Members', voicePage: 'Voice', settingPage: 'Settings' };
   document.getElementById('pageTitle').textContent = titles[section] || '';
-
-  // If settings page, load server info
   if (section === 'settingPage') loadSettingsInfo();
 }
 
@@ -346,17 +318,12 @@ function setRange(r, event) {
 }
 
 // ---------------------------
-// RENDER DELTAS
+// DELTAS
 // ---------------------------
 function renderDelta(elem, value, unit = '') {
   const abs = Math.abs(Math.round(value));
-  if (!value) {
-    elem.textContent = 'No change since last period';
-    elem.className = 'delta';
-  } else {
-    elem.textContent = value >= 0 ? `+${abs} ${unit} since last period` : `-${abs} ${unit} since last period`;
-    elem.className = 'delta ' + (value >= 0 ? 'up' : 'down');
-  }
+  if (!value) { elem.textContent = 'No change since last period'; elem.className = 'delta'; } 
+  else { elem.textContent = value >= 0 ? `+${abs} ${unit} since last period` : `-${abs} ${unit} since last period`; elem.className = 'delta ' + (value >= 0 ? 'up' : 'down'); }
 }
 
 // ---------------------------
@@ -365,10 +332,7 @@ function renderDelta(elem, value, unit = '') {
 async function loadGuildInfo() {
   try {
     const user = JSON.parse(localStorage.getItem('opslinkUser') || '{}');
-    const endpoint = user.role === 'admin'
-      ? `${BACKEND}/api/servers`
-      : `${BACKEND}/api/servers/mine`;
-
+    const endpoint = user.role === 'admin' ? `${BACKEND}/api/servers` : `${BACKEND}/api/servers/mine`;
     const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
     const servers = await res.json();
     const server = servers.find(s => s.discordServerId === serverId || s._id === serverId);
@@ -376,7 +340,6 @@ async function loadGuildInfo() {
 
     serverId = server.discordServerId;
 
-    // Update sidebar
     document.getElementById('serverName').textContent = server.name;
     document.getElementById('serverIcon').src = server.logo || 'https://via.placeholder.com/52';
     document.getElementById('username').textContent = user.discordUsername;
@@ -384,14 +347,11 @@ async function loadGuildInfo() {
     document.getElementById('userAvatar').src = `https://cdn.discordapp.com/avatars/${user.discordUserID}/${user.discordAvatar}.png`;
     
     return true;
-  } catch (err) {
-    console.error('Failed to load server/user info:', err);
-    return false;
-  }
+  } catch (err) { console.error('Failed to load server/user info:', err); return false; }
 }
 
 // ---------------------------
-// LOAD SETTINGS INFO
+// SETTINGS INFO
 // ---------------------------
 function loadSettingsInfo() {
   document.getElementById('settingServerName').textContent = document.getElementById('serverName').textContent;
@@ -404,12 +364,9 @@ function loadSettingsInfo() {
 // ---------------------------
 async function loadAnalytics() {
   try {
-    const res = await fetch(`${BACKEND}/api/analytics/${serverId}?range=${range}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const res = await fetch(`${BACKEND}/api/analytics/${serverId}?range=${range}`, { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json();
 
-    // Main stats
     elements.members.textContent = data.members?.current ?? 0;
     elements.messages.textContent = data.messages?.current ?? 0;
     elements.joins.textContent = data.joins?.current ?? 0;
@@ -420,33 +377,16 @@ async function loadAnalytics() {
     elements.boosts.textContent = data.boosts ?? 0;
     elements.afkMembers.textContent = data.afkMembers ?? 0;
 
-    // Voice fix
-    let currentVoice = 0;
-    if (data.voice?.minutes != null) currentVoice = data.voice.minutes;
-    else if (data.chart?.voiceMinutes?.length) {
-      currentVoice = data.chart.voiceMinutes[data.chart.voiceMinutes.length - 1] ?? 0;
-    }
-    elements.voice.textContent = Math.round(currentVoice);
+    elements.voice.textContent = Math.round(data.voice?.minutes ?? data.chart?.voiceMinutes?.slice(-1)[0] ?? 0);
 
-    // Deltas
     renderDelta(elements.membersDelta, Number(data.members?.delta) || 0);
     renderDelta(elements.messagesDelta, Number(data.messages?.delta) || 0);
     renderDelta(elements.voiceDelta, Number(data.voice?.delta) || 0, 'minutes');
     renderDelta(elements.joinsDelta, Number(data.joins?.delta) || 0);
 
-    // Top Channels
-    elements.topChannels.innerHTML = '';
-    (data.topChannels || []).forEach(c => {
-      elements.topChannels.innerHTML += `<div class="row"><span>#${c.name}</span><span>${c.count}</span></div>`;
-    });
+    elements.topChannels.innerHTML = (data.topChannels || []).map(c => `<div class="row"><span>#${c.name}</span><span>${c.count}</span></div>`).join('');
+    elements.topMembers.innerHTML = (data.topMembers || []).map(m => `<div class="row"><span>${m.name}</span><span>${Math.round(m.activityScore)}</span></div>`).join('');
 
-    // Top Members
-    elements.topMembers.innerHTML = '';
-    (data.topMembers || []).forEach(m => {
-      elements.topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${Math.round(m.activityScore)}</span></div>`;
-    });
-
-    // Charts
     const charts = [
       { ctx: elements.activityChart, data: data.chart, type: 'line', key: 'activity', fields: ['members','messages','voiceMinutes','joins'] },
       { ctx: elements.messagesChart, data: data.chart, type: 'bar', key: 'messages', fields: ['messages'] },
@@ -457,7 +397,6 @@ async function loadAnalytics() {
     charts.forEach(c => {
       if (!c.ctx || !c.data) return;
       if (chartInstances[c.key]) chartInstances[c.key].destroy();
-
       const datasets = c.fields.map(f => ({
         label: f.charAt(0).toUpperCase() + f.slice(1),
         data: Array.isArray(c.data[f]) ? c.data[f] : [],
@@ -465,7 +404,6 @@ async function loadAnalytics() {
         backgroundColor: 'rgba(78,161,255,0.2)',
         tension: 0.4
       }));
-
       chartInstances[c.key] = new Chart(c.ctx, {
         type: c.type,
         data: { labels: Array.isArray(c.data.labels) ? c.data.labels : [], datasets },
@@ -474,16 +412,12 @@ async function loadAnalytics() {
           responsive: true, 
           maintainAspectRatio: false,
           interaction: { mode: 'index', intersect: false },
-          scales: {
-            y: { beginAtZero: true }
-          }
+          scales: { y: { beginAtZero: true } }
         }
       });
     });
 
-  } catch (err) {
-    console.error('Analytics error:', err);
-  }
+  } catch (err) { console.error('Analytics error:', err); }
 }
 
 // ---------------------------
@@ -492,44 +426,27 @@ async function loadAnalytics() {
 document.getElementById('resetSnapshots')?.addEventListener('click', async () => {
   if (!confirm("⚠️ Are you sure? This will DELETE ALL snapshots for this server permanently!")) return;
   try {
-    const res = await fetch(`${BACKEND}/api/snapshots/${serverId}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const res = await fetch(`${BACKEND}/api/snapshots/${serverId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) throw new Error(`Failed: ${res.status}`);
     alert("✅ All snapshots deleted successfully.");
     loadAnalytics();
-  } catch (err) {
-    console.error(err);
-    alert("❌ Failed to delete snapshots. See console for details.");
-  }
+  } catch (err) { console.error(err); alert("❌ Failed to delete snapshots. See console for details."); }
 });
 
 document.getElementById('resetRecentSnapshots')?.addEventListener('click', async () => {
   if (!confirm("⚠️ Are you sure? This will RESET snapshots from the last 30 days!")) return;
   try {
-    const res = await fetch(`${BACKEND}/api/snapshots/${serverId}?range=30d`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const res = await fetch(`${BACKEND}/api/snapshots/${serverId}?range=30d`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
     if (!res.ok) throw new Error(`Failed: ${res.status}`);
     alert("✅ Last 30 days snapshots reset successfully.");
     loadAnalytics();
-  } catch (err) {
-    console.error(err);
-    alert("❌ Failed to reset snapshots. See console for details.");
-  }
+  } catch (err) { console.error(err); alert("❌ Failed to reset snapshots. See console for details."); }
 });
 
 // ---------------------------
 // INIT
 // ---------------------------
-(async () => {
-  const ok = await loadGuildInfo();
-  if (ok) loadAnalytics();
-})();
-
-// Refresh analytics every 30 seconds
+(async () => { if (await loadGuildInfo()) loadAnalytics(); })();
 setInterval(loadAnalytics, 30_000);
 </script>
 
