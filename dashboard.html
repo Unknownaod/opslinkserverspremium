@@ -254,80 +254,113 @@ canvas{height:260px!important}
 const token = localStorage.getItem('opslinkToken');
 if(!token) location.href='login.html';
 
-let range='7d';
-const serverId=new URLSearchParams(location.search).get('server');
-const API='https://opslinkserversapi.onrender.com';
+let range = '7d';
+const serverId = new URLSearchParams(location.search).get('server');
+const API = 'https://opslinkserversapi.onrender.com';
 
+// ================= NAVIGATION =================
 function nav(id){
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
-  pageTitle.textContent=id.charAt(0).toUpperCase()+id.slice(1);
+  pageTitle.textContent = id.charAt(0).toUpperCase() + id.slice(1);
 }
 
 function setRange(r){
-  range=r;
-  document.querySelectorAll('.time button').forEach(b=>b.classList.remove('active'));
+  range = r;
+  document.querySelectorAll('.time button').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
   load();
 }
 
-function delta(el,val){
-  el.textContent=`${val>=0?'▲':'▼'} ${Math.abs(val)}%`;
-  el.className=`delta ${val>=0?'up':'down'}`;
+// ================= DELTA HELPER =================
+function delta(el, val){
+  el.textContent = `${val >= 0 ? '▲' : '▼'} ${Math.abs(val)}%`;
+  el.className = `delta ${val >= 0 ? 'up' : 'down'}`;
 }
 
-async function load(){
-  const data=await fetch(`${API}/analytics/${serverId}/overview?range=${range}`,{
-    headers:{Authorization:`Bearer ${token}`}
-  }).then(r=>r.json());
-
-  serverName.textContent=data.server.name;
-  serverIcon.src=data.server.icon;
-
-  username.textContent=data.user.username;
-  userRole.textContent=data.user.role;
-  userAvatar.src=data.user.avatar;
-
-  members.textContent=data.members.current;
-  messages.textContent=data.messages.current;
-  voice.textContent=data.voice.current;
-  joins.textContent=data.joins.current;
-
-  delta(membersDelta,data.members.delta);
-  delta(messagesDelta,data.messages.delta);
-  delta(voiceDelta,data.voice.delta);
-  delta(joinsDelta,data.joins.delta);
-
-  topChannels.innerHTML='';
-  data.topChannels.forEach(c=>{
-    topChannels.innerHTML+=`<div class="row"><span>#${c.name}</span><span>${c.value}</span></div>`;
-  });
-
-  topMembers.innerHTML='';
-  data.topMembers.forEach(m=>{
-    topMembers.innerHTML+=`<div class="row"><span>${m.name}</span><span>${m.value}</span></div>`;
-  });
-
-  new Chart(activityChart,{
-    type:'line',
-    data:{labels:data.chart.labels,datasets:[{data:data.chart.data,borderColor:'#4ea1ff',tension:.4}]},
-    options:{plugins:{legend:{display:false}}}
-  });
+// ================= FETCH SERVER INFO =================
+async function getServerInfo() {
+  try {
+    const res = await fetch(`${API}/servers/mine`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const servers = await res.json();
+    const server = servers.find(s => s._id === serverId);
+    if (!server) throw new Error('Server not found or access denied');
+    return server;
+  } catch (err) {
+    console.error('Failed to get server info:', err);
+    alert('Unable to load server info. Make sure you have access.');
+    return null;
+  }
 }
 
+// ================= LOAD DASHBOARD =================
+async function load() {
+  const server = await getServerInfo();
+  if (!server) return;
+
+  // Update server header like guilds.html
+  serverName.textContent = server.name;
+  serverIcon.src = server.logo || 'https://via.placeholder.com/80';
+
+  try {
+    const res = await fetch(`${API}/analytics/${serverId}/overview?range=${range}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error('Failed to fetch analytics');
+
+    const data = await res.json();
+
+    // User info
+    username.textContent = data.user?.username || 'Unknown';
+    userRole.textContent = data.user?.role || 'Unknown';
+    userAvatar.src = data.user?.avatar || 'https://via.placeholder.com/80';
+
+    // Metrics
+    members.textContent = data.members?.current ?? 0;
+    messages.textContent = data.messages?.current ?? 0;
+    voice.textContent = data.voice?.current ?? 0;
+    joins.textContent = data.joins?.current ?? 0;
+
+    delta(membersDelta, data.members?.delta ?? 0);
+    delta(messagesDelta, data.messages?.delta ?? 0);
+    delta(voiceDelta, data.voice?.delta ?? 0);
+    delta(joinsDelta, data.joins?.delta ?? 0);
+
+    // Top Channels
+    topChannels.innerHTML = '';
+    (data.topChannels || []).forEach(c => {
+      topChannels.innerHTML += `<div class="row"><span>#${c.name}</span><span>${c.value}</span></div>`;
+    });
+
+    // Top Members
+    topMembers.innerHTML = '';
+    (data.topMembers || []).forEach(m => {
+      topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.value}</span></div>`;
+    });
+
+    // Activity chart
+    if (activityChart && data.chart) {
+      new Chart(activityChart, {
+        type: 'line',
+        data: { labels: data.chart.labels || [], datasets: [{ data: data.chart.data || [], borderColor: '#4ea1ff', tension: 0.4 }] },
+        options: { plugins: { legend: { display: false } } }
+      });
+    }
+
+  } catch (err) {
+    console.error('Failed to load analytics:', err);
+    alert('Failed to load analytics. Try refreshing.');
+  }
+}
+
+// ================= INIT =================
 load();
-
-/*
-NEW BACKEND ENDPOINTS
---------------------
-GET /analytics/:server/overview?range=
-GET /analytics/:server/messages?range=
-GET /analytics/:server/members?range=
-GET /analytics/:server/voice?range=
-*/
 </script>
+
 
 </body>
 </html>
