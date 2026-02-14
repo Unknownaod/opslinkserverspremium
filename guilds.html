@@ -240,9 +240,9 @@ async function fetchWithAuth(url, options = {}) {
   const container = document.getElementById('servers');
 
   try {
-    // Admins get all servers, users get only their own
+    // Admins see the basic approved servers, users see only their own
     const endpoint = isAdmin
-      ? 'https://opslinkservers-backend.onrender.com/servers/all'
+      ? 'https://opslinkservers-backend.onrender.com/servers/'
       : 'https://opslinkservers-backend.onrender.com/servers/mine';
 
     const res = await fetchWithAuth(endpoint);
@@ -282,6 +282,7 @@ async function fetchWithAuth(url, options = {}) {
     logout();
   }
 })();
+
 
 </script>
 
