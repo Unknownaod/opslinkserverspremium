@@ -317,48 +317,59 @@ canvas { height: 260px!important; }
 </div>
 
 <script>
-// ===== STARS GENERATOR =====
+/* =========================
+   STARS GENERATOR
+========================= */
 const starsContainer = document.querySelector('.stars');
 const starCount = 120;
-for(let i=0;i<starCount;i++){
+
+for (let i = 0; i < starCount; i++) {
   const star = document.createElement('div');
   star.classList.add('star');
-  const size = Math.random()*3+1;
+  const size = Math.random() * 3 + 1;
   star.style.width = `${size}px`;
   star.style.height = `${size}px`;
-  star.style.top = `${Math.random()*100}%`;
-  star.style.left = `${Math.random()*100}%`;
-  star.style.animationDuration = `${Math.random()*5+3}s`;
+  star.style.top = `${Math.random() * 100}%`;
+  star.style.left = `${Math.random() * 100}%`;
+  star.style.animationDuration = `${Math.random() * 5 + 3}s`;
   starsContainer.appendChild(star);
 }
 
-  
+/* =========================
+   AUTH / GLOBALS
+========================= */
 const token = localStorage.getItem('opslinkToken');
 if (!token) location.href = 'login.html';
 
-// Get server param from URL
-let serverId = new URLSearchParams(location.search).get('server'); 
+let serverId = new URLSearchParams(location.search).get('server');
 const BACKEND = 'https://opslinkservers-backend.onrender.com';
 let range = '7d';
 
+/* =========================
+   ELEMENTS
+========================= */
 const elements = {
   members: document.getElementById('members'),
   messages: document.getElementById('messages'),
   voice: document.getElementById('voice'),
   joins: document.getElementById('joins'),
+
   membersDelta: document.getElementById('membersDelta'),
   messagesDelta: document.getElementById('messagesDelta'),
   voiceDelta: document.getElementById('voiceDelta'),
   joinsDelta: document.getElementById('joinsDelta'),
+
   textChannels: document.getElementById('textChannels'),
   voiceChannels: document.getElementById('voiceChannels'),
   rolesCount: document.getElementById('rolesCount'),
   emojisCount: document.getElementById('emojisCount'),
   boosts: document.getElementById('boosts'),
   afkMembers: document.getElementById('afkMembers'),
+
   topChannels: document.getElementById('topChannels'),
   topMembers: document.getElementById('topMembers'),
-  activityChart: document.getElementById('activityChart').getContext('2d'),
+
+  activityChart: document.getElementById('activityChart')?.getContext('2d'),
   messagesChart: document.getElementById('messagesChart')?.getContext('2d'),
   membersChart: document.getElementById('membersChart')?.getContext('2d'),
   voiceChart: document.getElementById('voiceChart')?.getContext('2d')
@@ -366,13 +377,14 @@ const elements = {
 
 let chartInstances = {};
 
-// --------------------------
+/* =========================
+   HELPERS
+========================= */
 function nav(section) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(section).classList.add('active');
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
-  document.getElementById('pageTitle').textContent = section.replace(/Page$/,'').charAt(0).toUpperCase() + section.replace(/Page$/,'').slice(1);
 }
 
 function setRange(r) {
@@ -382,62 +394,86 @@ function setRange(r) {
   loadAnalytics();
 }
 
-function delta(elem, val) {
-  elem.textContent = (val >= 0 ? '+' : '') + val;
-  elem.className = 'delta ' + (val >= 0 ? 'up' : 'down');
+function renderDelta(elem, value) {
+  const abs = Math.abs(value);
+  elem.textContent =
+    value >= 0
+      ? `+${abs} more since last period`
+      : `-${abs} since last period`;
+
+  elem.className = 'delta ' + (value >= 0 ? 'up' : 'down');
 }
 
-// --------------------------
+function computeDelta(snapshots, field) {
+  if (!snapshots || snapshots.length < 2) return 0;
+  const latest = snapshots[snapshots.length - 1][field] ?? 0;
+  const previous = snapshots[snapshots.length - 2][field] ?? 0;
+  return latest - previous;
+}
+
+/* =========================
+   LOAD GUILD INFO
+========================= */
 async function loadGuildInfo() {
   try {
-    const userStr = localStorage.getItem('opslinkUser');
-    const user = JSON.parse(userStr || '{}');
+    const user = JSON.parse(localStorage.getItem('opslinkUser') || '{}');
 
-    const endpoint = user.role === 'admin'
-      ? `${BACKEND}/api/servers`    // admins see all approved servers
-      : `${BACKEND}/api/servers/mine`; // users see only their servers
+    const endpoint =
+      user.role === 'admin'
+        ? `${BACKEND}/api/servers`
+        : `${BACKEND}/api/servers/mine`;
 
-    const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` }});
-    if (!res.ok) throw new Error('Failed to fetch servers');
+    const res = await fetch(endpoint, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
     const servers = await res.json();
+    const server = servers.find(
+      s => s.discordServerId === serverId || s._id === serverId
+    );
 
-    // Find server by Discord Server ID or fallback to original param
-    const server = servers.find(s => s.discordServerId === serverId || s._id === serverId);
     if (!server) throw new Error('Server not found');
 
-    // Update serverId to Discord ID for analytics
-    serverId = server.discordServerId || serverId;
+    serverId = server.discordServerId;
 
     document.getElementById('serverName').textContent = server.name;
-    document.getElementById('serverIcon').src = server.logo || 'https://via.placeholder.com/52';
+    document.getElementById('serverIcon').src =
+      server.logo || 'https://via.placeholder.com/52';
+
     document.getElementById('username').textContent = user.discordUsername;
-    document.getElementById('userRole').textContent = user.role.toUpperCase();
-    document.getElementById('userAvatar').src = `https://cdn.discordapp.com/avatars/${user.discordUserID}/${user.discordAvatar || 'default'}.png`;
+    document.getElementById('userRole').textContent = user.role?.toUpperCase();
+    document.getElementById('userAvatar').src =
+      `https://cdn.discordapp.com/avatars/${user.discordUserID}/${user.discordAvatar}.png`;
 
     return true;
   } catch (err) {
-    console.error('Failed to load server/user info:', err);
+    console.error(err);
     return false;
   }
 }
 
-// --------------------------
-// --------------------------
+/* =========================
+   LOAD ANALYTICS
+========================= */
 async function loadAnalytics() {
   try {
-    const res = await fetch(`${BACKEND}/api/analytics/${serverId}?range=${range}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error('Failed to fetch analytics');
+    const res = await fetch(
+      `${BACKEND}/api/analytics/${serverId}?range=${range}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
     const data = await res.json();
 
-    // Current stats
-    elements.members.textContent = data.members?.current ?? 0;
-    elements.messages.textContent = data.messages?.current ?? 0;
-    elements.voice.textContent = data.voice?.current ?? 0;
-    elements.joins.textContent = data.joins?.current ?? 0;
+    const snapshots = data.snapshots || [];
+
+    // Current values (latest snapshot)
+    const latest = snapshots[snapshots.length - 1] || {};
+
+    elements.members.textContent = latest.members ?? 0;
+    elements.messages.textContent = latest.messages ?? 0;
+    elements.voice.textContent = latest.voice ?? 0;
+    elements.joins.textContent = latest.joins ?? 0;
+
     elements.textChannels.textContent = data.textChannelsCount ?? 0;
     elements.voiceChannels.textContent = data.voiceChannelsCount ?? 0;
     elements.rolesCount.textContent = data.rolesCount ?? 0;
@@ -445,77 +481,41 @@ async function loadAnalytics() {
     elements.boosts.textContent = data.boosts ?? 0;
     elements.afkMembers.textContent = data.afkMembers ?? 0;
 
-    // Deltas
-    delta(elements.membersDelta, data.members?.delta ?? 0);
-    delta(elements.messagesDelta, data.messages?.delta ?? 0);
-    delta(elements.voiceDelta, data.voice?.delta ?? 0);
-    delta(elements.joinsDelta, data.joins?.delta ?? 0);
+    // Deltas (REAL snapshot comparison)
+    renderDelta(elements.membersDelta, computeDelta(snapshots, 'members'));
+    renderDelta(elements.messagesDelta, computeDelta(snapshots, 'messages'));
+    renderDelta(elements.voiceDelta, computeDelta(snapshots, 'voice'));
+    renderDelta(elements.joinsDelta, computeDelta(snapshots, 'joins'));
 
     // Top channels
     elements.topChannels.innerHTML = '';
     (data.topChannels || []).forEach(c => {
-      elements.topChannels.innerHTML += `<div class="row"><span>#${c.name}</span><span>${c.count}</span></div>`;
+      elements.topChannels.innerHTML +=
+        `<div class="row"><span>#${c.name}</span><span>${c.count}</span></div>`;
     });
 
     // Top members
     elements.topMembers.innerHTML = '';
     (data.topMembers || []).forEach(m => {
-      elements.topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.count}</span></div>`;
-    });
-
-    // Charts
-    const charts = [
-      { ctx: elements.activityChart, data: data.chart, type: 'line', key: 'activity', field: ['members','messages','voice','joins'] },
-      { ctx: elements.messagesChart, data: data.chart, type: 'bar', key: 'messages', field: 'messages' },
-      { ctx: elements.membersChart, data: data.chart, type: 'line', key: 'members', field: 'members' },
-      { ctx: elements.voiceChart, data: data.chart, type: 'line', key: 'voice', field: 'voice' }
-    ];
-
-    charts.forEach(c => {
-      if (!c.ctx) return;
-      if (chartInstances[c.key]) chartInstances[c.key].destroy();
-
-      const datasets = Array.isArray(c.field)
-        ? c.field.map(f => ({
-            label: f.charAt(0).toUpperCase() + f.slice(1),
-            data: c.data[f] || [],
-            borderColor: f === 'members' ? '#4ea1ff' :
-                         f === 'messages' ? '#22c55e' :
-                         f === 'voice' ? '#ef4444' : '#fbbf24',
-            backgroundColor: 'rgba(78,161,255,0.2)',
-            tension: 0.4
-          }))
-        : [{
-            label: c.field.charAt(0).toUpperCase() + c.field.slice(1),
-            data: c.data[c.field] || [],
-            borderColor: '#4ea1ff',
-            backgroundColor: 'rgba(78,161,255,0.2)',
-            tension: 0.4
-          }];
-
-      chartInstances[c.key] = new Chart(c.ctx, {
-        type: c.type,
-        data: { labels: c.data.labels || [], datasets },
-        options: { plugins: { legend: { display: true } } }
-      });
+      elements.topMembers.innerHTML +=
+        `<div class="row"><span>${m.name}</span><span>${m.count}</span></div>`;
     });
 
   } catch (err) {
-    console.error('Failed to load analytics:', err);
+    console.error('Analytics error:', err);
   }
-} // <-- CLOSE loadAnalytics HERE
+}
 
-// --------------------------
+/* =========================
+   INIT + AUTO REFRESH
+========================= */
 (async () => {
-  const loaded = await loadGuildInfo();
-  if (loaded) loadAnalytics();
+  const ok = await loadGuildInfo();
+  if (ok) loadAnalytics();
 })();
 
-// --------------------------
-(async () => {
-  const loaded = await loadGuildInfo();
-  if (loaded) loadAnalytics();
-})();
+// refresh every 30s
+setInterval(loadAnalytics, 30_000);
 </script>
 
 </body>
