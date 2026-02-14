@@ -209,7 +209,11 @@ for (let i = 0; i < 120; i++) {
 
 /* ===== AUTH ===== */
 const token = localStorage.getItem('opslinkToken');
-if (!token) window.location.href = 'index.html';
+const userStr = localStorage.getItem('opslinkUser'); // user object stored on login
+if (!token || !userStr) window.location.href = 'index.html';
+
+const user = JSON.parse(userStr);
+const isAdmin = user.role === 'admin'; // use role from localStorage
 
 function logout() {
   localStorage.removeItem('opslinkToken');
@@ -218,11 +222,6 @@ function logout() {
 }
 
 /* ===== HELPERS ===== */
-function parseJwt(token) {
-  try { return JSON.parse(atob(token.split('.')[1])); }
-  catch { return null; }
-}
-
 async function fetchWithAuth(url, options = {}) {
   options.headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
   const res = await fetch(url, options);
@@ -241,17 +240,7 @@ async function fetchWithAuth(url, options = {}) {
   const container = document.getElementById('servers');
 
   try {
-    const decoded = parseJwt(token);
-    if (!decoded?.discordUsername) throw new Error('Invalid token');
-
-    // Get user role
-    const roleRes = await fetchWithAuth(
-      `https://opslinkservers-backend.onrender.com/servers/role/${encodeURIComponent(decoded.discordUsername)}`
-    );
-    const roleData = await roleRes.json();
-    const isAdmin = roleData.role === 'admin';
-
-    // Choose endpoint
+    // choose endpoint based on role
     const endpoint = isAdmin
       ? 'https://opslinkservers-backend.onrender.com/servers/all'
       : 'https://opslinkservers-backend.onrender.com/servers/mine';
@@ -259,10 +248,8 @@ async function fetchWithAuth(url, options = {}) {
     const res = await fetchWithAuth(endpoint);
     let servers = await res.json();
 
-    if (isAdmin) {
-      // Admins only see approved servers in this view
-      servers = servers.filter(s => s.status === 'approved');
-    }
+    // optionally filter admins to only see approved servers
+    if (isAdmin) servers = servers.filter(s => s.status === 'approved');
 
     if (!servers.length) {
       container.innerHTML = `<div class="empty">No servers found.</div>`;
@@ -298,6 +285,7 @@ async function fetchWithAuth(url, options = {}) {
     logout();
   }
 })();
+
 </script>
 
 
