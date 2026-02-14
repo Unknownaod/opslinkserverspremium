@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <title>OpsLink Analytics</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <link href="https://fonts.cdnfonts.com/css/satoshi" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 :root{
   --bg-1000:#0b0f14;
@@ -17,45 +19,178 @@
   --blue:#4ea1ff;
   --green:#22c55e;
   --red:#ef4444;
+  --yellow:#facc15;
+  --blue-glow:rgba(78,161,255,.25);
 }
+
+/* ===== Reset ===== */
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Satoshi',sans-serif}
-body{height:100vh;display:flex;background:radial-gradient(circle at 10% 20%, rgba(78,161,255,.08), transparent 40%),radial-gradient(circle at 90% 80%, rgba(78,161,255,.06), transparent 40%),linear-gradient(180deg,var(--bg-900),var(--bg-1000));color:var(--text);}
-.sidebar{width:280px;background:var(--bg-900);border-right:1px solid var(--border);padding:28px 24px;display:flex;flex-direction:column;}
-.server{display:flex;align-items:center;gap:14px;margin-bottom:30px;}
-.server img{width:52px;height:52px;border-radius:14px;}
-.server-name{font-weight:700;font-size:15px;}
-.user{display:flex;align-items:center;gap:12px;background:var(--bg-800);border:1px solid var(--border);border-radius:14px;padding:12px;margin-bottom:30px;}
-.user img{width:38px;height:38px;border-radius:50%;}
-.user-name{font-size:14px;font-weight:600;}
+body{height:100vh;display:flex;position:relative;overflow:hidden;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(78,161,255,.06), transparent 35%),
+    radial-gradient(circle at 85% 80%, rgba(78,161,255,.04), transparent 40%),
+    linear-gradient(180deg,var(--bg-900),var(--bg-1000));
+  color:var(--text);
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background-image:url("https://grainy-gradients.vercel.app/noise.svg");
+  opacity:.03;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ===== STARS ===== */
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.star{
+  position:absolute;
+  background:white;
+  border-radius:50%;
+  opacity:.6;
+  animation:twinkle linear infinite;
+}
+@keyframes twinkle{0%,100%{opacity:.2}50%{opacity:.8}}
+
+/* ===== SIDEBAR ===== */
+.sidebar{
+  width:300px;
+  background:var(--bg-900);
+  border-right:1px solid var(--border);
+  padding:28px 24px;
+  display:flex;
+  flex-direction:column;
+  z-index:1;
+  position:relative;
+  box-shadow:0 0 50px rgba(0,0,0,.5);
+}
+
+.server{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-bottom:30px;
+}
+.server img{
+  width:52px;
+  height:52px;
+  border-radius:14px;
+  border:2px solid var(--blue);
+  box-shadow:0 0 10px var(--blue-glow);
+}
+.server-name{font-weight:700;font-size:16px;color:white;}
+
+.user{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:var(--bg-800);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:30px;
+  box-shadow:0 0 15px rgba(0,0,0,.3);
+}
+.user img{
+  width:40px;
+  height:40px;
+  border-radius:50%;
+  border:2px solid var(--blue);
+  box-shadow:0 0 10px var(--blue-glow);
+}
+.user-name{font-size:14px;font-weight:600;color:white;}
 .user-role{font-size:12px;color:var(--muted);}
+
+/* NAVIGATION */
 .nav{display:flex;flex-direction:column;gap:8px;}
-.nav button{background:none;border:none;padding:12px 14px;border-radius:10px;text-align:left;color:var(--muted);cursor:pointer;}
-.nav button.active,.nav button:hover{background:rgba(78,161,255,.14);color:white;}
-.main{flex:1;padding:36px 56px;overflow-y:auto;}
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px;}
-h1{font-size:36px;}
-.subtitle{color:var(--muted);margin-top:6px;}
-.time{display:flex;gap:10px;}
-.time button{background:var(--bg-800);border:1px solid var(--border);padding:10px 14px;border-radius:10px;color:var(--muted);cursor:pointer;}
-.time button.active{background:rgba(78,161,255,.18);color:white;}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;}
-.card{background:var(--bg-800);border:1px solid var(--border);border-radius:18px;padding:24px;}
+.nav button{
+  background:none;
+  border:none;
+  padding:12px 14px;
+  border-radius:10px;
+  text-align:left;
+  color:var(--muted);
+  cursor:pointer;
+  transition:.2s;
+}
+.nav button.active,.nav button:hover{
+  background:rgba(78,161,255,.14);
+  color:white;
+}
+
+/* ===== MAIN ===== */
+.main{
+  flex:1;
+  padding:36px 56px;
+  overflow-y:auto;
+  z-index:1;
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:30px;
+}
+
+h1{font-size:36px}
+.subtitle{color:var(--muted);margin-top:6px}
+
+/* TIME SELECTOR */
+.time{
+  display:flex;
+  gap:10px;
+}
+.time button{
+  background:var(--bg-800);
+  border:1px solid var(--border);
+  padding:10px 14px;
+  border-radius:10px;
+  color:var(--muted);
+  cursor:pointer;
+  transition:.2s;
+}
+.time button.active{
+  background:rgba(78,161,255,.18);
+  color:white;
+}
+
+/* GRID CARDS */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:24px;
+}
+.card{
+  background:var(--bg-800);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:24px;
+  transition:.3s;
+}
+.card:hover{box-shadow:0 0 35px var(--blue-glow);border-color:var(--blue);}
 .metric{font-size:34px;font-weight:800;}
 .label{font-size:14px;color:var(--muted);}
-.delta{font-size:13px;margin-top:6px;}
-.up{color:var(--green);}
-.down{color:var(--red);}
-.full{grid-column:span 4;}
-.half{grid-column:span 2;}
-.list{display:flex;flex-direction:column;gap:12px;}
-.row{display:flex;justify-content:space-between;font-size:14px;}
-canvas{height:260px!important;}
-.section{display:none;}
-.section.active{display:block;}
+.delta{font-size:13px;margin-top:6px}
+.up{color:var(--green)}
+.down{color:var(--red)}
+.full{grid-column:span 4}
+.half{grid-column:span 2}
+.list{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;justify-content:space-between;font-size:14px}
+canvas{height:260px!important}
+
+/* SECTIONS */
+.section{display:none}
+.section.active{display:block}
 </style>
 </head>
-<body>
 
+<body>
+<div class="stars"></div>
+
+<!-- SIDEBAR -->
 <div class="sidebar">
   <div class="server">
     <img id="serverIcon">
@@ -78,6 +213,7 @@ canvas{height:260px!important;}
   </div>
 </div>
 
+<!-- MAIN -->
 <div class="main">
   <div class="header">
     <div>
@@ -94,37 +230,13 @@ canvas{height:260px!important;}
 
   <div id="overview" class="section active">
     <div class="grid">
-      <div class="card">
-        <div class="metric" id="members">—</div>
-        <div class="label">Members</div>
-        <div class="delta" id="membersDelta"></div>
-      </div>
-      <div class="card">
-        <div class="metric" id="messages">—</div>
-        <div class="label">Messages</div>
-        <div class="delta" id="messagesDelta"></div>
-      </div>
-      <div class="card">
-        <div class="metric" id="voice">—</div>
-        <div class="label">Voice Minutes</div>
-        <div class="delta" id="voiceDelta"></div>
-      </div>
-      <div class="card">
-        <div class="metric" id="joins">—</div>
-        <div class="label">Joins</div>
-        <div class="delta" id="joinsDelta"></div>
-      </div>
-      <div class="card full">
-        <canvas id="activityChart"></canvas>
-      </div>
-      <div class="card half">
-        <h3>Top Channels</h3>
-        <div id="topChannels" class="list"></div>
-      </div>
-      <div class="card half">
-        <h3>Top Members</h3>
-        <div id="topMembers" class="list"></div>
-      </div>
+      <div class="card"><div class="metric" id="members">—</div><div class="label">Members</div><div class="delta" id="membersDelta"></div></div>
+      <div class="card"><div class="metric" id="messages">—</div><div class="label">Messages</div><div class="delta" id="messagesDelta"></div></div>
+      <div class="card"><div class="metric" id="voice">—</div><div class="label">Voice Minutes</div><div class="delta" id="voiceDelta"></div></div>
+      <div class="card"><div class="metric" id="joins">—</div><div class="label">Joins</div><div class="delta" id="joinsDelta"></div></div>
+      <div class="card full"><canvas id="activityChart"></canvas></div>
+      <div class="card half"><h3>Top Channels</h3><div id="topChannels" class="list"></div></div>
+      <div class="card half"><h3>Top Members</h3><div id="topMembers" class="list"></div></div>
     </div>
   </div>
 
@@ -135,7 +247,7 @@ canvas{height:260px!important;}
 
 <script>
 const token = localStorage.getItem('opslinkToken');
-if(!token) location.href='index.html';
+if(!token) location.href='login.html';
 const serverId = new URLSearchParams(location.search).get('server');
 const BACKEND = 'https://opslinkservers-backend.onrender.com';
 let range = '7d';
@@ -221,11 +333,23 @@ async function loadAnalytics(){
   }
 }
 
+// ===== Init =====
 (async()=>{
   const loaded = await loadGuildInfo();
   if(loaded) loadAnalytics();
+
+  // Create some stars for background
+  const starsContainer = document.querySelector('.stars');
+  for(let i=0;i<150;i++){
+    const s=document.createElement('div');
+    s.className='star';
+    s.style.top=Math.random()*100+'%';
+    s.style.left=Math.random()*100+'%';
+    s.style.width=s.style.height=Math.random()*2+1+'px';
+    s.style.animationDuration=(Math.random()*3+2)+'s';
+    starsContainer.appendChild(s);
+  }
 })();
 </script>
-
 </body>
 </html>
