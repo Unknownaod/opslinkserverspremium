@@ -433,14 +433,122 @@ async function loadAnalytics() {
 }
 
 // ---------------------------
-// SNAPSHOT BUTTONS
+// SELF-CONTAINED TOAST & CONFIRM PROMPT
 // ---------------------------
+(function injectCustomUI() {
+  // Inject CSS for toast & confirm
+  const style = document.createElement('style');
+  style.textContent = `
+    /* Toast */
+    .custom-toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #444;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      opacity: 0.95;
+      z-index: 9999;
+      transition: opacity 0.3s ease;
+      font-family: sans-serif;
+    }
+    .custom-toast-success { background: #4caf50; }
+    .custom-toast-error { background: #f44336; }
+    .custom-toast-info { background: #2196f3; }
+    .custom-toast.fade-out { opacity: 0; }
 
-async function deleteSnapshots(range, confirmMessage, successMessage) {
-  if (!confirm(confirmMessage)) return;
+    /* Confirm overlay */
+    .custom-confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    }
+    .custom-confirm-box {
+      background: #fff;
+      padding: 20px 30px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 400px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-family: sans-serif;
+    }
+    .custom-confirm-buttons {
+      margin-top: 15px;
+    }
+    .custom-confirm-buttons button {
+      margin: 0 10px;
+      padding: 6px 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .confirm-yes { background: #4caf50; color: #fff; }
+    .confirm-no { background: #f44336; color: #fff; }
+  `;
+  document.head.appendChild(style);
+
+  // ---------------------------
+  // Utility: show toast
+  // ---------------------------
+  (window as any).showToast = (message: string, type: 'success' | 'error' | 'info' = 'info', duration = 3000) => {
+    const toast = document.createElement('div');
+    toast.className = `custom-toast custom-toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add('fade-out');
+      toast.addEventListener('transitionend', () => toast.remove());
+    }, duration);
+  };
+
+  // ---------------------------
+  // Utility: custom confirm
+  // ---------------------------
+  (window as any).showConfirm = (message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'custom-confirm-overlay';
+
+      overlay.innerHTML = `
+        <div class="custom-confirm-box">
+          <p>${message}</p>
+          <div class="custom-confirm-buttons">
+            <button class="confirm-yes">Yes</button>
+            <button class="confirm-no">No</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      overlay.querySelector('.confirm-yes')?.addEventListener('click', () => {
+        resolve(true);
+        overlay.remove();
+      });
+
+      overlay.querySelector('.confirm-no')?.addEventListener('click', () => {
+        resolve(false);
+        overlay.remove();
+      });
+    });
+  };
+})();
+
+// ---------------------------
+// SNAPSHOT BUTTONS (using custom UI)
+// ---------------------------
+async function deleteSnapshots(range: string, confirmMessage: string, successMessage: string) {
+  const confirmed = await (window as any).showConfirm(confirmMessage);
+  if (!confirmed) return;
 
   try {
-    // Update URL to match the analytics route
     const url = new URL(`${BACKEND}/api/analytics/${serverId}/snapshots`);
     url.searchParams.append('range', range);
 
@@ -452,13 +560,12 @@ async function deleteSnapshots(range, confirmMessage, successMessage) {
     if (!res.ok) throw new Error(`Failed: ${res.status}`);
 
     const data = await res.json();
-    alert(`✅ ${data.message || successMessage}`);
+    (window as any).showToast(data.message || successMessage, 'success');
 
-    // Refresh analytics if function exists
     if (typeof loadAnalytics === 'function') loadAnalytics();
   } catch (err) {
     console.error(err);
-    alert('❌ Failed to delete snapshots. See console for details.');
+    (window as any).showToast('Failed to delete snapshots. See console for details.', 'error');
   }
 }
 
@@ -479,6 +586,7 @@ document.getElementById('resetRecentSnapshots')?.addEventListener('click', () =>
     'Last 30 days snapshots reset successfully.'
   )
 );
+
 
 
 
