@@ -7,6 +7,7 @@
 
 <link href="https://fonts.cdnfonts.com/css/satoshi" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css">
 
 <style>
 :root {
@@ -96,6 +97,9 @@ body {
   text-align: left;
   color: var(--muted);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 .nav button.active,
 .nav button:hover {
@@ -188,10 +192,10 @@ canvas { height: 260px!important; }
   </div>
 
   <div class="nav">
-    <button class="active" onclick="nav('overview')">Overview</button>
-    <button onclick="nav('messages')">Messages</button>
-    <button onclick="nav('members')">Members</button>
-    <button onclick="nav('voice')">Voice</button>
+    <button class="active" onclick="nav('overview')"><i class='bx bx-home'></i>Overview</button>
+    <button onclick="nav('messages')"><i class='bx bx-message-rounded-dots'></i>Messages</button>
+    <button onclick="nav('membersPage')"><i class='bx bx-group'></i>Members</button>
+    <button onclick="nav('voicePage')"><i class='bx bx-headphone'></i>Voice</button>
   </div>
 
 </div>
@@ -212,6 +216,7 @@ canvas { height: 260px!important; }
   </div>
 </div>
 
+<!-- OVERVIEW -->
 <div id="overview" class="section active">
   <div class="grid">
     <div class="card">
@@ -234,6 +239,30 @@ canvas { height: 260px!important; }
       <div class="label">Joins</div>
       <div class="delta" id="joinsDelta"></div>
     </div>
+    <div class="card">
+      <div class="metric" id="textChannels">—</div>
+      <div class="label">Text Channels</div>
+    </div>
+    <div class="card">
+      <div class="metric" id="voiceChannels">—</div>
+      <div class="label">Voice Channels</div>
+    </div>
+    <div class="card">
+      <div class="metric" id="rolesCount">—</div>
+      <div class="label">Roles</div>
+    </div>
+    <div class="card">
+      <div class="metric" id="emojisCount">—</div>
+      <div class="label">Emojis</div>
+    </div>
+    <div class="card">
+      <div class="metric" id="boosts">—</div>
+      <div class="label">Boosts</div>
+    </div>
+    <div class="card">
+      <div class="metric" id="afkMembers">—</div>
+      <div class="label">AFK Members</div>
+    </div>
 
     <div class="card full">
       <canvas id="activityChart"></canvas>
@@ -251,6 +280,7 @@ canvas { height: 260px!important; }
   </div>
 </div>
 
+<!-- OTHER PAGES -->
 <div id="messages" class="section"><canvas id="messagesChart"></canvas></div>
 <div id="membersPage" class="section"><canvas id="membersChart"></canvas></div>
 <div id="voicePage" class="section"><canvas id="voiceChart"></canvas></div>
@@ -265,22 +295,30 @@ const serverId = new URLSearchParams(location.search).get('server');
 const BACKEND = 'https://opslinkservers-backend.onrender.com';
 let range = '7d';
 
-// Elements
-const members = document.getElementById('members');
-const messages = document.getElementById('messages');
-const voice = document.getElementById('voice');
-const joins = document.getElementById('joins');
+const elements = {
+  members: document.getElementById('members'),
+  messages: document.getElementById('messages'),
+  voice: document.getElementById('voice'),
+  joins: document.getElementById('joins'),
+  membersDelta: document.getElementById('membersDelta'),
+  messagesDelta: document.getElementById('messagesDelta'),
+  voiceDelta: document.getElementById('voiceDelta'),
+  joinsDelta: document.getElementById('joinsDelta'),
+  textChannels: document.getElementById('textChannels'),
+  voiceChannels: document.getElementById('voiceChannels'),
+  rolesCount: document.getElementById('rolesCount'),
+  emojisCount: document.getElementById('emojisCount'),
+  boosts: document.getElementById('boosts'),
+  afkMembers: document.getElementById('afkMembers'),
+  topChannels: document.getElementById('topChannels'),
+  topMembers: document.getElementById('topMembers'),
+  activityChart: document.getElementById('activityChart').getContext('2d'),
+  messagesChart: document.getElementById('messagesChart')?.getContext('2d'),
+  membersChart: document.getElementById('membersChart')?.getContext('2d'),
+  voiceChart: document.getElementById('voiceChart')?.getContext('2d')
+};
 
-const membersDelta = document.getElementById('membersDelta');
-const messagesDelta = document.getElementById('messagesDelta');
-const voiceDelta = document.getElementById('voiceDelta');
-const joinsDelta = document.getElementById('joinsDelta');
-
-const topChannels = document.getElementById('topChannels');
-const topMembers = document.getElementById('topMembers');
-const activityChart = document.getElementById('activityChart').getContext('2d');
-
-let chartInstance;
+let chartInstances = {};
 
 // --------------------------
 function nav(section) {
@@ -288,7 +326,7 @@ function nav(section) {
   document.getElementById(section).classList.add('active');
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
-  document.getElementById('pageTitle').textContent = section.charAt(0).toUpperCase() + section.slice(1);
+  document.getElementById('pageTitle').textContent = section.replace(/Page$/,'').charAt(0).toUpperCase() + section.replace(/Page$/,'').slice(1);
 }
 
 function setRange(r) {
@@ -300,11 +338,9 @@ function setRange(r) {
 
 function delta(elem, val) {
   elem.textContent = (val >= 0 ? '+' : '') + val;
-  elem.className = val >= 0 ? 'delta up' : 'delta down';
+  elem.className = 'delta ' + (val >= 0 ? 'up' : 'down');
 }
 
-// --------------------------
-// Load server and user info
 // --------------------------
 async function loadGuildInfo() {
   try {
@@ -336,8 +372,6 @@ async function loadGuildInfo() {
 }
 
 // --------------------------
-// Load analytics from backend
-// --------------------------
 async function loadAnalytics() {
   try {
     const res = await fetch(`${BACKEND}/api/analytics/${serverId}?range=${range}`, {
@@ -348,38 +382,54 @@ async function loadAnalytics() {
     const data = await res.json();
 
     // Current stats
-    members.textContent = data.members?.current ?? 0;
-    messages.textContent = data.messages?.current ?? 0;
-    voice.textContent = data.voice?.current ?? 0;
-    joins.textContent = data.joins?.current ?? 0;
+    elements.members.textContent = data.members?.current ?? 0;
+    elements.messages.textContent = data.messages?.current ?? 0;
+    elements.voice.textContent = data.voice?.current ?? 0;
+    elements.joins.textContent = data.joins?.current ?? 0;
+    elements.textChannels.textContent = data.textChannelsCount ?? 0;
+    elements.voiceChannels.textContent = data.voiceChannelsCount ?? 0;
+    elements.rolesCount.textContent = data.rolesCount ?? 0;
+    elements.emojisCount.textContent = data.emojisCount ?? 0;
+    elements.boosts.textContent = data.boosts ?? 0;
+    elements.afkMembers.textContent = data.afkMembers ?? 0;
 
     // Deltas
-    delta(membersDelta, data.members?.delta ?? 0);
-    delta(messagesDelta, data.messages?.delta ?? 0);
-    delta(voiceDelta, data.voice?.delta ?? 0);
-    delta(joinsDelta, data.joins?.delta ?? 0);
+    delta(elements.membersDelta, data.members?.delta ?? 0);
+    delta(elements.messagesDelta, data.messages?.delta ?? 0);
+    delta(elements.voiceDelta, data.voice?.delta ?? 0);
+    delta(elements.joinsDelta, data.joins?.delta ?? 0);
 
     // Top channels
-    topChannels.innerHTML = '';
+    elements.topChannels.innerHTML = '';
     (data.topChannels || []).forEach(c => {
-      topChannels.innerHTML += `<div class="row"><span>#${c.name}</span><span>${c.count}</span></div>`;
+      elements.topChannels.innerHTML += `<div class="row"><span>#${c.name}</span><span>${c.count}</span></div>`;
     });
 
     // Top members
-    topMembers.innerHTML = '';
+    elements.topMembers.innerHTML = '';
     (data.topMembers || []).forEach(m => {
-      topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.count}</span></div>`;
+      elements.topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.count}</span></div>`;
     });
 
-    // Chart
-    if (chartInstance) chartInstance.destroy();
-    chartInstance = new Chart(activityChart, {
-      type: 'line',
-      data: {
-        labels: data.chart?.labels || [],
-        datasets: [{ data: data.chart?.data || [], borderColor: '#4ea1ff', tension: 0.4 }]
-      },
-      options: { plugins: { legend: { display: false } } }
+    // Charts
+    const charts = [
+      { ctx: elements.activityChart, data: data.chart, type: 'line', key: 'activity' },
+      { ctx: elements.messagesChart, data: data.chart, type: 'bar', key: 'messages' },
+      { ctx: elements.membersChart, data: data.chart, type: 'line', key: 'members' },
+      { ctx: elements.voiceChart, data: data.chart, type: 'line', key: 'voice' }
+    ];
+
+    charts.forEach(c => {
+      if (!c.ctx) return;
+      if (chartInstances[c.key]) chartInstances[c.key].destroy();
+      chartInstances[c.key] = new Chart(c.ctx, {
+        type: c.type,
+        data: {
+          labels: c.data?.labels || [],
+          datasets: [{ data: c.data?.data || [], borderColor: '#4ea1ff', backgroundColor: 'rgba(78,161,255,0.2)', tension: 0.4 }]
+        },
+        options: { plugins: { legend: { display: false } } }
+      });
     });
 
   } catch (err) {
