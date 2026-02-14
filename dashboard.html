@@ -322,8 +322,13 @@ function setRange(r, event) {
 // ---------------------------
 function renderDelta(elem, value, unit = '') {
   const abs = Math.abs(Math.round(value));
-  if (!value) { elem.textContent = 'No change since last period'; elem.className = 'delta'; } 
-  else { elem.textContent = value >= 0 ? `+${abs} ${unit} since last period` : `-${abs} ${unit} since last period`; elem.className = 'delta ' + (value >= 0 ? 'up' : 'down'); }
+  if (!value) { 
+    elem.textContent = 'No change since last period'; 
+    elem.className = 'delta'; 
+  } else { 
+    elem.textContent = value >= 0 ? `+${abs} ${unit} since last period` : `-${abs} ${unit} since last period`; 
+    elem.className = 'delta ' + (value >= 0 ? 'up' : 'down'); 
+  }
 }
 
 // ---------------------------
@@ -347,7 +352,10 @@ async function loadGuildInfo() {
     document.getElementById('userAvatar').src = `https://cdn.discordapp.com/avatars/${user.discordUserID}/${user.discordAvatar}.png`;
     
     return true;
-  } catch (err) { console.error('Failed to load server/user info:', err); return false; }
+  } catch (err) { 
+    console.error('Failed to load server/user info:', err); 
+    return false; 
+  }
 }
 
 // ---------------------------
@@ -377,16 +385,20 @@ async function loadAnalytics() {
     elements.boosts.textContent = data.boosts ?? 0;
     elements.afkMembers.textContent = data.afkMembers ?? 0;
 
+    // Proper voice metric
     elements.voice.textContent = Math.round(data.voice?.minutes ?? data.chart?.voiceMinutes?.slice(-1)[0] ?? 0);
 
+    // Deltas
     renderDelta(elements.membersDelta, Number(data.members?.delta) || 0);
     renderDelta(elements.messagesDelta, Number(data.messages?.delta) || 0);
     renderDelta(elements.voiceDelta, Number(data.voice?.delta) || 0, 'minutes');
     renderDelta(elements.joinsDelta, Number(data.joins?.delta) || 0);
 
+    // Top channels/members
     elements.topChannels.innerHTML = (data.topChannels || []).map(c => `<div class="row"><span>#${c.name}</span><span>${c.count}</span></div>`).join('');
     elements.topMembers.innerHTML = (data.topMembers || []).map(m => `<div class="row"><span>${m.name}</span><span>${Math.round(m.activityScore)}</span></div>`).join('');
 
+    // Charts
     const charts = [
       { ctx: elements.activityChart, data: data.chart, type: 'line', key: 'activity', fields: ['members','messages','voiceMinutes','joins'] },
       { ctx: elements.messagesChart, data: data.chart, type: 'bar', key: 'messages', fields: ['messages'] },
@@ -426,7 +438,12 @@ async function loadAnalytics() {
 document.getElementById('resetSnapshots')?.addEventListener('click', async () => {
   if (!confirm("⚠️ Are you sure? This will DELETE ALL snapshots for this server permanently!")) return;
   try {
-    const res = await fetch(`${BACKEND}/api/snapshots/${serverId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    const url = new URL(`${BACKEND}/api/${serverId}/snapshots`);
+    url.searchParams.append('range', 'all');
+    const res = await fetch(url.toString(), {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
     if (!res.ok) throw new Error(`Failed: ${res.status}`);
     alert("✅ All snapshots deleted successfully.");
     loadAnalytics();
@@ -436,7 +453,12 @@ document.getElementById('resetSnapshots')?.addEventListener('click', async () =>
 document.getElementById('resetRecentSnapshots')?.addEventListener('click', async () => {
   if (!confirm("⚠️ Are you sure? This will RESET snapshots from the last 30 days!")) return;
   try {
-    const res = await fetch(`${BACKEND}/api/snapshots/${serverId}?range=30d`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+    const url = new URL(`${BACKEND}/api/${serverId}/snapshots`);
+    url.searchParams.append('range', '30d');
+    const res = await fetch(url.toString(), {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
     if (!res.ok) throw new Error(`Failed: ${res.status}`);
     alert("✅ Last 30 days snapshots reset successfully.");
     loadAnalytics();
