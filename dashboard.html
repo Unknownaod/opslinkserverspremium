@@ -372,4 +372,43 @@ async function loadAnalytics() {
       const datasets = c.fields.map(f => ({
         label: f.charAt(0).toUpperCase() + f.slice(1),
         data: Array.isArray(c.data[f]) ? c.data[f] : [],
-        borderColor: f === 'members' ? '#4ea1ff' : f === 'messages' ? '#22c55e' : f === 'voiceMinutes' ? '#ef4444' : f === 'joins' ? '#fbbf24' : '#
+        borderColor: f === 'members' ? '#4ea1ff' : f === 'messages' ? '#22c55e' : f === 'voiceMinutes' ? '#ef4444' : f === 'joins' ? '#fbbf24' : '#d946ef',
+        backgroundColor: 'rgba(78,161,255,0.2)',
+        tension: 0.4
+      }));
+
+      chartInstances[c.key] = new Chart(c.ctx, {
+        type: c.type,
+        data: { labels: Array.isArray(c.data.labels) ? c.data.labels : [], datasets },
+        options: { 
+          plugins: { legend: { display: true } }, 
+          responsive: true, 
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    });
+
+  } catch (err) {
+    console.error('Analytics error:', err);
+  }
+}
+
+// ---------------------------
+// INIT
+// ---------------------------
+(async () => {
+  const ok = await loadGuildInfo();
+  if (ok) loadAnalytics();
+})();
+
+// Refresh analytics every 30 seconds
+setInterval(loadAnalytics, 30_000);
+</script>
+
+</body>
+</html>
+
