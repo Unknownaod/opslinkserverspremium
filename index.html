@@ -191,6 +191,14 @@ document.getElementById('loginForm').addEventListener('submit', async (e)=>{
     const data = await res.json();
 
     if(res.ok && data.token){
+      // ===== Check isPremium =====
+      if(!data.user.isPremium){
+        errorDiv.style.display = 'block';
+        errorDiv.style.color = 'var(--bleed-red)';
+        errorDiv.innerText = 'You must be a premium user to log in.';
+        return;
+      }
+
       // Store token and user info
       localStorage.setItem('opslinkToken', data.token);
       localStorage.setItem('opslinkUser', JSON.stringify(data.user));
