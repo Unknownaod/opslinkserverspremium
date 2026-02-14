@@ -342,6 +342,7 @@ const token = localStorage.getItem('opslinkToken');
 if (!token) location.href = 'login.html';
 
 let serverId = new URLSearchParams(location.search).get('server');
+let range = '7d';
 const BACKEND = 'https://opslinkservers-backend.onrender.com';
 
 /* =========================
@@ -439,7 +440,7 @@ async function loadGuildInfo() {
 ========================= */
 async function loadAnalytics() {
   try {
-    const res = await fetch(`${BACKEND}/api/analytics/${serverId}?range=7d`, {
+    const res = await fetch(`${BACKEND}/api/analytics/${serverId}?range=${range}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -472,45 +473,39 @@ async function loadAnalytics() {
     // TOP MEMBERS
     elements.topMembers.innerHTML = '';
     (data.topMembers || []).forEach(m => {
-      elements.topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.count}</span></div>`;
+      elements.topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.activityScore}</span></div>`;
     });
 
     // =========================
     // CHARTS
     // =========================
     const charts = [
-      { ctx: elements.activityChart, data: data.chart, type: 'line', key: 'activity', field: ['members','messages','voice','joins'] },
-      { ctx: elements.messagesChart, data: data.chart, type: 'bar', key: 'messages', field: 'messages' },
-      { ctx: elements.membersChart, data: data.chart, type: 'line', key: 'members', field: 'members' },
-      { ctx: elements.voiceChart, data: data.chart, type: 'line', key: 'voice', field: 'voice' }
+      { ctx: elements.activityChart, data: data.chart, type: 'line', key: 'activity', fields: ['members','messages','voice','joins','voiceMinutes'] },
+      { ctx: elements.messagesChart, data: data.chart, type: 'bar', key: 'messages', fields: ['messages'] },
+      { ctx: elements.membersChart, data: data.chart, type: 'line', key: 'members', fields: ['members'] },
+      { ctx: elements.voiceChart, data: data.chart, type: 'line', key: 'voice', fields: ['voice','voiceMinutes'] }
     ];
 
     charts.forEach(c => {
       if (!c.ctx) return;
       if (chartInstances[c.key]) chartInstances[c.key].destroy();
 
-      const datasets = Array.isArray(c.field)
-        ? c.field.map(f => ({
-            label: f.charAt(0).toUpperCase() + f.slice(1),
-            data: c.data[f] || [],
-            borderColor: f === 'members' ? '#4ea1ff' :
-                         f === 'messages' ? '#22c55e' :
-                         f === 'voice' ? '#ef4444' : '#fbbf24',
-            backgroundColor: 'rgba(78,161,255,0.2)',
-            tension: 0.4
-          }))
-        : [{
-            label: c.field.charAt(0).toUpperCase() + c.field.slice(1),
-            data: c.data[c.field] || [],
-            borderColor: '#4ea1ff',
-            backgroundColor: 'rgba(78,161,255,0.2)',
-            tension: 0.4
-          }];
+      const datasets = c.fields.map(f => ({
+        label: f.charAt(0).toUpperCase() + f.slice(1),
+        data: c.data[f] || [],
+        borderColor: f === 'members' ? '#4ea1ff' :
+                     f === 'messages' ? '#22c55e' :
+                     f === 'voice' ? '#ef4444' :
+                     f === 'joins' ? '#fbbf24' :
+                     '#d946ef',
+        backgroundColor: 'rgba(78,161,255,0.2)',
+        tension: 0.4
+      }));
 
       chartInstances[c.key] = new Chart(c.ctx, {
         type: c.type,
         data: { labels: c.data.labels || [], datasets },
-        options: { plugins: { legend: { display: true } } }
+        options: { plugins: { legend: { display: true } }, responsive: true, maintainAspectRatio: false }
       });
     });
 
