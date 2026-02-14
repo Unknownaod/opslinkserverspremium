@@ -196,52 +196,62 @@ nav{
 <script>
 /* ===== STARS ===== */
 const stars = document.querySelector('.stars');
-for(let i=0;i<120;i++){
-  const s=document.createElement('div');
-  s.className='star';
-  const size=Math.random()*3+1;
-  s.style.width=s.style.height=`${size}px`;
-  s.style.top=`${Math.random()*100}%`;
-  s.style.left=`${Math.random()*100}%`;
-  s.style.animationDuration=`${Math.random()*6+4}s`;
+for (let i = 0; i < 120; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  const size = Math.random() * 3 + 1;
+  s.style.width = s.style.height = `${size}px`;
+  s.style.top = `${Math.random() * 100}%`;
+  s.style.left = `${Math.random() * 100}%`;
+  s.style.animationDuration = `${Math.random() * 6 + 4}s`;
   stars.appendChild(s);
 }
 
 /* ===== AUTH ===== */
 const token = localStorage.getItem('opslinkToken');
-if(!token){
-  window.location.href = 'login.html';
+
+if (!token) {
+  // No token at all
+  window.location.href = 'index.html';
 }
 
-function logout(){
+function logout() {
   localStorage.removeItem('opslinkToken');
-  window.location.href = 'login.html';
+  window.location.href = 'index.html';
 }
 
 /* ===== HELPERS ===== */
-function parseJwt(token){
-  try{
+function parseJwt(token) {
+  try {
     return JSON.parse(atob(token.split('.')[1]));
-  }catch{
+  } catch {
     return null;
   }
 }
 
+function redirectToIndex() {
+  localStorage.removeItem('opslinkToken');
+  window.location.href = 'index.html';
+}
+
 /* ===== LOAD SERVERS ===== */
-(async function loadServers(){
+(async function loadServers() {
   const container = document.getElementById('servers');
 
-  try{
-    // decode discord username from JWT
+  try {
+    // decode JWT
     const decoded = parseJwt(token);
-    if(!decoded?.discordUsername) throw new Error('Invalid token');
+    if (!decoded?.discordUsername) throw new Error('Invalid token');
 
     // get role
     const roleRes = await fetch(
-      `https://opslinkservers-backend.onrender.com/servers/role/${encodeURIComponent(decoded.discordUsername)}`
+      `https://opslinkservers-backend.onrender.com/servers/role/${encodeURIComponent(decoded.discordUsername)}`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
     );
-    const roleData = await roleRes.json();
 
+    if (!roleRes.ok) throw new Error('Failed to fetch role');
+
+    const roleData = await roleRes.json();
     const isAdmin = roleData.role === 'admin';
 
     // choose endpoint
@@ -249,20 +259,21 @@ function parseJwt(token){
       ? 'https://opslinkservers-backend.onrender.com/servers'
       : 'https://opslinkservers-backend.onrender.com/servers/mine';
 
-    const res = await fetch(endpoint,{
-      headers:{ 'Authorization': `Bearer ${token}` }
+    const res = await fetch(endpoint, {
+      headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    if(res.status === 401) throw new Error('Unauthorized');
+    if (res.status === 401) throw new Error('Unauthorized');
+    if (!res.ok) throw new Error('Failed to fetch servers');
 
     let servers = await res.json();
 
     // admins only see approved servers
-    if(isAdmin){
+    if (isAdmin) {
       servers = servers.filter(s => s.status === 'approved');
     }
 
-    if(!servers.length){
+    if (!servers.length) {
       container.innerHTML = `
         <div class="empty">
           No servers found.
@@ -270,10 +281,10 @@ function parseJwt(token){
       return;
     }
 
-    servers.forEach(s=>{
-      const card=document.createElement('div');
-      card.className='card';
-      card.innerHTML=`
+    servers.forEach(s => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
         <div class="server-header">
           <img src="${s.logo}" alt="">
           <div class="server-name">${s.name}</div>
@@ -297,13 +308,14 @@ function parseJwt(token){
       container.appendChild(card);
     });
 
-  }catch(err){
-    console.error(err);
-    localStorage.removeItem('opslinkToken');
-    window.location.href = 'login.html';
+  } catch (err) {
+    console.error('Error loading servers:', err);
+    // Remove token and redirect to index page on any error
+    redirectToIndex();
   }
 })();
 </script>
+
 
 
 </body>
