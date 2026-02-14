@@ -1,306 +1,310 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>OpsLink Premium Home</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OpsLink Premium Home</title>
 
-  <link href="https://fonts.cdnfonts.com/css/satoshi" rel="stylesheet">
+<link href="https://fonts.cdnfonts.com/css/satoshi" rel="stylesheet">
 
-  <style>
-    :root{
-      --bleed-background-1000:#0b0f14;
-      --bleed-background-900:#0f141b;
-      --bleed-background-800:#12161c;
-      --bleed-border:#1f2630;
-      --bleed-text:#f8fafc;
-      --bleed-muted:#8b949e;
-      --bleed-blue:#4ea1ff;
-      --bleed-blue-glow:rgba(78,161,255,.25);
-      --bleed-red:#ff5c5c;
-      --bleed-red-glow: rgba(255,92,92,0.25);
-      --bleed-yellow:#ffc107;
-      --bleed-yellow-glow: rgba(255,193,7,0.25);
-    }
+<style>
+:root{
+  --bleed-background-1000:#0b0f14;
+  --bleed-background-900:#0f141b;
+  --bleed-background-800:#12161c;
+  --bleed-border:#1f2630;
+  --bleed-text:#f8fafc;
+  --bleed-muted:#8b949e;
+  --bleed-blue:#4ea1ff;
+  --bleed-blue-glow:rgba(78,161,255,.25);
+  --bleed-red:#ff5c5c;
+  --bleed-red-glow: rgba(255,92,92,0.25);
+  --bleed-yellow:#ffc107;
+  --bleed-yellow-glow: rgba(255,193,7,0.25);
+}
 
-    /* Reset */
-    *{ margin:0; padding:0; box-sizing:border-box; font-family:'Satoshi',sans-serif; }
-    html,body{ height:100%; }
+/* Reset */
+*{ margin:0; padding:0; box-sizing:border-box; font-family:'Satoshi',sans-serif; }
+html,body{ height:100%; }
 
-    body{
-      background:
-        radial-gradient(circle at 15% 20%, rgba(78,161,255,.06), transparent 35%),
-        radial-gradient(circle at 85% 80%, rgba(78,161,255,.04), transparent 40%),
-        linear-gradient(180deg,var(--bleed-background-900) 0%,var(--bleed-background-1000) 100%);
-      color:var(--bleed-text);
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      flex-direction:column;
-      min-height:100vh;
-      overflow-x:hidden;
-    }
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      background-image:url("https://grainy-gradients.vercel.app/noise.svg");
-      opacity:.03;
-      pointer-events:none;
-      z-index:0;
-    }
+body{
+  background:
+    radial-gradient(circle at 15% 20%, rgba(78,161,255,.06), transparent 35%),
+    radial-gradient(circle at 85% 80%, rgba(78,161,255,.04), transparent 40%),
+    linear-gradient(180deg,var(--bleed-background-900) 0%,var(--bleed-background-1000) 100%);
+  color:var(--bleed-text);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background-image:url("https://grainy-gradients.vercel.app/noise.svg");
+  opacity:.03;
+  pointer-events:none;
+  z-index:0;
+}
 
-    /* ===== STAR FIELD ===== */
-    .stars { position:fixed; width:100%; height:100%; background:transparent; pointer-events:none; z-index:0; }
-    .star { position:absolute; background:white; border-radius:50%; opacity:0.8; animation: twinkle linear infinite; }
-    @keyframes twinkle { 0%,100% {opacity:0.2;} 50% {opacity:0.8;} }
+/* ===== STARS ===== */
+.stars { position:fixed; width:100%; height:100%; background:transparent; pointer-events:none; z-index:0; }
+.star { position:absolute; background:white; border-radius:50%; opacity:0.8; animation: twinkle linear infinite; }
+@keyframes twinkle { 0%,100% {opacity:0.2;} 50% {opacity:0.8;} }
 
-    /* ===== HERO SECTION ===== */
-    .hero{
-      min-height:100vh;
-      display:flex;
-      flex-direction:column;
-      justify-content:center;
-      align-items:center;
-      text-align:center;
-      padding: 20px;
-      z-index:1;
-      position:relative;
-    }
-    .hero h1{
-      font-size:4rem;
-      font-weight:800;
-      background:linear-gradient(90deg, #4ea1ff, #ffc107, #ff5c5c);
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:transparent;
-      margin-bottom:20px;
-      text-shadow: 0 0 10px rgba(78,161,255,0.5), 0 0 20px rgba(255,193,7,0.3);
-    }
-    .hero p{
-      font-size:1.3rem;
-      color:var(--bleed-muted);
-      margin-bottom:35px;
-      max-width:700px;
-    }
-    .hero .btn{
-      padding:15px 30px;
-      border-radius:12px;
-      font-weight:600;
-      font-size:16px;
-      color:#fff;
-      background:var(--bleed-blue);
-      box-shadow:0 0 35px var(--bleed-blue-glow), 0 0 70px rgba(78,161,255,0.15);
-      cursor:pointer;
-      border:none;
-      transition:0.3s ease;
-      margin:5px;
-      animation: pulse 2.5s infinite alternate;
-    }
-    .hero .btn:hover{
-      transform:translateY(-3px);
-      box-shadow:0 0 55px var(--bleed-blue-glow), 0 0 90px rgba(78,161,255,0.2);
-    }
+/* ===== HEADER ===== */
+.header {
+  text-align: center;
+  font-size: 60px;
+  font-weight: 700;
+  background: linear-gradient(45deg, #4ea1ff, #ff5c5c);
+  -webkit-background-clip: text;
+  color: transparent;
+  margin-bottom: 30px;
+}
 
-    /* ===== PULSE ANIMATION ===== */
-    @keyframes pulse{
-      0%{ box-shadow: 0 0 35px var(--bleed-blue-glow), 0 0 70px rgba(78,161,255,0.15); }
-      50%{ box-shadow: 0 0 50px var(--bleed-blue-glow), 0 0 100px rgba(78,161,255,0.2); }
-      100%{ box-shadow: 0 0 35px var(--bleed-blue-glow), 0 0 70px rgba(78,161,255,0.15); }
-    }
+/* ===== CARDS ===== */
+.cards-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 50px;
+}
+.card {
+  background: var(--bleed-background-800);
+  border-radius: 15px;
+  padding: 25px;
+  max-width: 250px;
+  width: 100%;
+  box-shadow: 0 0 25px rgba(78,161,255,.1);
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0 35px rgba(78,161,255,.2);
+}
+.card img {
+  width: 60px;
+  height: 60px;
+  margin-bottom: 20px;
+}
+.card h3 {
+  font-size: 22px;
+  margin-bottom: 15px;
+  color: var(--bleed-text);
+}
+.card p {
+  color: var(--bleed-muted);
+}
 
-    /* ===== LOGIN CARD ===== */
-    .login-card{
-      background: linear-gradient(145deg, var(--bleed-background-800), var(--bleed-background-900));
-      border:1px solid var(--bleed-border);
-      border-radius:25px;
-      padding:50px 40px;
-      width:100%;
-      max-width:420px;
-      box-shadow:0 0 60px rgba(78,161,255,.15);
-      position:relative;
-      z-index:1;
-      text-align:center;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    .login-card:hover{
-      transform: translateY(-5px);
-      box-shadow:0 0 80px rgba(78,161,255,.25);
-    }
-    .login-card h2{
-      margin-bottom:15px;
-      font-size:30px;
-      font-weight:700;
-      background:linear-gradient(90deg, #4ea1ff, #ffc107);
-      -webkit-background-clip:text;
-      -webkit-text-fill-color:transparent;
-    }
-    .login-card input{
-      width:100%;
-      padding:14px 15px;
-      margin-bottom:20px;
-      border-radius:12px;
-      border:1px solid var(--bleed-border);
-      background:var(--bleed-background-900);
-      color:var(--bleed-text);
-      font-size:15px;
-      transition: border 0.2s ease;
-    }
-    .login-card input:focus{
-      border:1px solid var(--bleed-blue);
-      outline:none;
-    }
-    .login-card button{
-      width:100%;
-      padding:14px;
-      border:none;
-      border-radius:12px;
-      background:var(--bleed-blue);
-      color:white;
-      font-size:16px;
-      font-weight:600;
-      cursor:pointer;
-      box-shadow:0 0 35px var(--bleed-blue-glow);
-      transition:.2s ease;
-    }
-    .login-card button:hover{
-      transform:translateY(-2px);
-      box-shadow:0 0 55px var(--bleed-blue-glow);
-    }
+/* ===== LOGIN CARD ===== */
+.login-card{
+  background: linear-gradient(145deg, var(--bleed-background-800), var(--bleed-background-900));
+  border:1px solid var(--bleed-border);
+  border-radius:25px;
+  padding:50px 40px;
+  width:100%;
+  max-width:420px;
+  box-shadow:0 0 60px rgba(78,161,255,.15);
+  position:relative;
+  z-index:1;
+  text-align:center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.login-card:hover{
+  transform: translateY(-5px);
+  box-shadow:0 0 80px rgba(78,161,255,.25);
+}
+.login-card h2{
+  margin-bottom:15px;
+  font-size:30px;
+  font-weight:700;
+}
+.login-card input{
+  width:100%;
+  padding:14px 15px;
+  margin-bottom:20px;
+  border-radius:12px;
+  border:1px solid var(--bleed-border);
+  background:var(--bleed-background-900);
+  color:var(--bleed-text);
+  font-size:15px;
+  transition: border 0.2s ease;
+}
+.login-card input:focus{
+  border:1px solid var(--bleed-blue);
+  outline:none;
+}
+.login-card button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:var(--bleed-blue);
+  color:white;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+  box-shadow:0 0 35px var(--bleed-blue-glow);
+  transition:.2s ease;
+}
+.login-card button:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 55px var(--bleed-blue-glow);
+}
+#errorMsg{
+  color:var(--bleed-red);
+  font-size:14px;
+  margin-top:12px;
+  display:none;
+}
 
-    /* ===== WARNING BOX INSIDE CARD ===== */
-    .warning-box{
-      background: linear-gradient(90deg, rgba(255,193,7,0.2), rgba(255,193,7,0.05));
-      border:1px solid var(--bleed-yellow);
-      padding:12px 20px;
-      border-radius:10px;
-      color:var(--bleed-yellow);
-      font-weight:500;
-      text-align:center;
-      margin-bottom:25px;
-      box-shadow:0 0 15px var(--bleed-yellow-glow);
-    }
-
-    /* Responsive */
-    @media(max-width:480px){
-      .login-card{ padding:35px 25px; }
-      .login-card h2{ font-size:24px; }
-      .warning-box{ font-size:14px; padding:10px 15px; }
-    }
-  </style>
+@media(max-width:768px){
+  .cards-container { flex-direction: column; align-items: center; }
+  .header { font-size: 40px; }
+  .login-card { padding: 35px 25px; }
+}
+</style>
 </head>
 <body>
 
 <div class="stars"></div>
 
-<!-- HERO SECTION -->
-<section class="hero">
-  <h1>Welcome to OpsLink Premium</h1>
-  <p>Your all-in-one tool for managing your Discord servers. Access premium features, server analytics, and tools that give you the edge.</p>
-  <button class="btn" onclick="window.location.href='#login'">Login to Your Account</button>
-  <button class="btn" onclick="window.location.href='#features'">Learn More</button>
-</section>
+<!-- Header Section -->
+<div class="header">
+  OpsLink Premium
+</div>
 
-<!-- FEATURES SECTION -->
-<section class="features" id="features">
-  <h2>Key Features</h2>
-  <div class="feature-card">
-    <h3>Advanced Analytics</h3>
-    <p>Track server performance, user engagement, and more with detailed insights.</p>
+<!-- Cards Section -->
+<div class="cards-container">
+  <div class="card">
+    <img src="https://via.placeholder.com/60" alt="Card 1">
+    <h3>Premium Features</h3>
+    <p>Unlock powerful features exclusive to premium users.</p>
   </div>
-  <div class="feature-card">
-    <h3>Premium Support</h3>
-    <p>Get priority support from our expert team anytime you need help.</p>
+  <div class="card">
+    <img src="https://via.placeholder.com/60" alt="Card 2">
+    <h3>Enhanced Security</h3>
+    <p>Advanced encryption and security measures for your account.</p>
   </div>
-  <div class="feature-card">
-    <h3>Exclusive Tools</h3>
-    <p>Unlock a suite of powerful tools to optimize and manage your server efficiently.</p>
+  <div class="card">
+    <img src="https://via.placeholder.com/60" alt="Card 3">
+    <h3>Priority Support</h3>
+    <p>Get faster support from our dedicated team.</p>
   </div>
-</section>
+</div>
 
-<!-- LOGIN CARD -->
-<section id="login">
-  <div class="login-card">
-    <h2>OpsLink Servers Login</h2>
-    <div class="warning-box">
-      ⚠️ This Website is for OpsLink Server Premium Users. Unauthorized attempts are not allowed.
-    </div>
-    <form id="loginForm">
-      <input type="email" id="email" placeholder="Email" required>
-      <input type="password" id="password" placeholder="Password" required>
-      <button type="submit">Login</button>
-      <div id="errorMsg"></div>
-    </form>
+<!-- Login Card -->
+<div class="login-card">
+  <h2>OpsLink Servers Login</h2>
+  <div class="warning-box">
+    ⚠️ This Website is for OpsLink Server Premium Users. Access is audited, and unauthorized attempts are not allowed.
   </div>
-</section>
+  <form id="loginForm">
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+    <div id="errorMsg"></div>
+  </form>
+</div>
 
 <script>
-  // ===== STARS GENERATOR =====
-  const starsContainer = document.querySelector('.stars');
-  const starCount = 120;
-  for(let i=0;i<starCount;i++){
-    const star = document.createElement('div');
-    star.classList.add('star');
-    const size = Math.random()*3+1;
-    star.style.width = `${size}px`;
-    star.style.height = `${size}px`;
-    star.style.top = `${Math.random()*100}%`;
-    star.style.left = `${Math.random()*100}%`;
-    star.style.animationDuration = `${Math.random()*5+3}s`;
-    starsContainer.appendChild(star);
-  }
+// ===== STARS GENERATOR =====
+const starsContainer = document.querySelector('.stars');
+const starCount = 120;
+for(let i=0;i<starCount;i++){
+  const star = document.createElement('div');
+  star.classList.add('star');
+  const size = Math.random()*3+1;
+  star.style.width = `${size}px`;
+  star.style.height = `${size}px`;
+  star.style.top = `${Math.random()*100}%`;
+  star.style.left = `${Math.random()*100}%`;
+  star.style.animationDuration = `${Math.random()*5+3}s`;
+  starsContainer.appendChild(star);
+}
 
-  // ===== LOGIN HANDLER =====
-  document.getElementById('loginForm').addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const errorDiv = document.getElementById('errorMsg');
-    errorDiv.style.display = 'none';
-    errorDiv.innerHTML = '';
+// ===== LOGIN HANDLER =====
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const errorDiv = document.getElementById('errorMsg');
+  errorDiv.style.display = 'none';
+  errorDiv.innerHTML = '';
 
-    try {
-      const res = await fetch('https://opslinkservers-backend.onrender.com/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type':'application/json' },
-        body: JSON.stringify({ email, password })
-      });
+  try {
+    const res = await fetch('https://opslinkservers-backend.onrender.com/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ email, password })
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if(res.ok && data.token){
-        // ===== Check isPremium =====
-        if(!data.user.isPremium){
-          errorDiv.style.display = 'block';
-          errorDiv.style.color = 'var(--bleed-red)';
-          errorDiv.innerText = 'You must be a premium user to log in.';
-          return;
-        }
-
-        // Store token and user info
-        localStorage.setItem('opslinkToken', data.token);
-        localStorage.setItem('opslinkUser', JSON.stringify(data.user));
-
-        // Success feedback
+    if(res.ok && data.token){
+      // ===== Check isPremium =====
+      if(!data.user.isPremium){
         errorDiv.style.display = 'block';
-        errorDiv.style.color = 'lime';
-        errorDiv.innerText = 'Login successful! Redirecting...';
-
-        setTimeout(()=> window.location.href = 'guilds.html', 1200);
+        errorDiv.style.color = 'var(--bleed-red)';
+        errorDiv.innerText = 'You must be a premium user to log in.';
         return;
       }
 
-      // Handle errors
+      // Store token and user info
+      localStorage.setItem('opslinkToken', data.token);
+      localStorage.setItem('opslinkUser', JSON.stringify(data.user));
+
+      // Success feedback
       errorDiv.style.display = 'block';
-      errorDiv.style.color = 'var(--bleed-red)';
-      errorDiv.innerText = data.error || 'Login failed';
-    } catch(err){
-      console.error(err);
-      errorDiv.style.display = 'block';
-      errorDiv.style.color = 'var(--bleed-red)';
-      errorDiv.innerText = 'Network error. Try again later.';
+      errorDiv.style.color = 'lime';
+      errorDiv.innerText = 'Login successful! Redirecting...';
+
+      setTimeout(()=> window.location.href = 'guilds.html', 1200);
+      return;
     }
-  });
+
+    // Email not verified
+    if(res.status === 403 && data.error?.includes('verify your email')){
+      errorDiv.innerHTML = `
+        ${data.error} <br>
+        <a href="#" id="resend">Resend Verification Email</a>
+      `;
+      errorDiv.style.display = 'block';
+      document.getElementById('resend').addEventListener('click', async ()=>{
+        try {
+          const resendRes = await fetch('https://opslinkservers-backend.onrender.com/api/auth/resend-verification', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json' },
+            body: JSON.stringify({ email })
+          });
+          const resendData = await resendRes.json();
+          alert(resendData.message || 'Verification email resent');
+        } catch(err){
+          console.error(err);
+          alert('Failed to resend verification email');
+        }
+      });
+      return;
+    }
+
+    // Other errors
+    errorDiv.style.display = 'block';
+    errorDiv.style.color = 'var(--bleed-red)';
+    errorDiv.innerText = data.error || 'Login failed';
+
+  } catch(err){
+    console.error(err);
+    errorDiv.style.display = 'block';
+    errorDiv.style.color = 'var(--bleed-red)';
+    errorDiv.innerText = 'Network error. Try again later.';
+  }
+});
 </script>
 
 </body>
