@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OpsLink Premium Login</title>
+
+<link href="https://fonts.cdnfonts.com/css/satoshi" rel="stylesheet">
+
+<style>
+:root{
+  --bleed-background-1000:#0b0f14;
+  --bleed-background-900:#0f141b;
+  --bleed-background-800:#12161c;
+  --bleed-border:#1f2630;
+  --bleed-text:#f8fafc;
+  --bleed-muted:#8b949e;
+  --bleed-blue:#4ea1ff;
+  --bleed-blue-glow:rgba(78,161,255,.25);
+  --bleed-red:#ff5c5c;
+  --bleed-red-glow: rgba(255,92,92,0.25);
+  --bleed-yellow:#ffc107;
+  --bleed-yellow-glow: rgba(255,193,7,0.25);
+}
+
+/* Reset */
+*{ margin:0; padding:0; box-sizing:border-box; font-family:'Satoshi',sans-serif; }
+html,body{ height:100%; }
+
+body{
+  background:
+    radial-gradient(circle at 15% 20%, rgba(78,161,255,.06), transparent 35%),
+    radial-gradient(circle at 85% 80%, rgba(78,161,255,.04), transparent 40%),
+    linear-gradient(180deg,var(--bleed-background-900) 0%,var(--bleed-background-1000) 100%);
+  color:var(--bleed-text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  flex-direction:column;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background-image:url("https://grainy-gradients.vercel.app/noise.svg");
+  opacity:.03;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ===== STAR FIELD ===== */
+.stars { position:fixed; width:100%; height:100%; background:transparent; pointer-events:none; z-index:0; }
+.star { position:absolute; background:white; border-radius:50%; opacity:0.8; animation: twinkle linear infinite; }
+@keyframes twinkle { 0%,100% {opacity:0.2;} 50% {opacity:0.8;} }
+
+/* ===== LOGIN CARD ===== */
+.login-card{
+  background: linear-gradient(145deg, var(--bleed-background-800), var(--bleed-background-900));
+  border:1px solid var(--bleed-border);
+  border-radius:25px;
+  padding:50px 40px;
+  width:100%;
+  max-width:420px;
+  box-shadow:0 0 60px rgba(78,161,255,.15);
+  position:relative;
+  z-index:1;
+  text-align:center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.login-card:hover{
+  transform: translateY(-5px);
+  box-shadow:0 0 80px rgba(78,161,255,.25);
+}
+.login-card h2{
+  margin-bottom:15px;
+  font-size:30px;
+  font-weight:700;
+}
+.login-card input{
+  width:100%;
+  padding:14px 15px;
+  margin-bottom:20px;
+  border-radius:12px;
+  border:1px solid var(--bleed-border);
+  background:var(--bleed-background-900);
+  color:var(--bleed-text);
+  font-size:15px;
+  transition: border 0.2s ease;
+}
+.login-card input:focus{
+  border:1px solid var(--bleed-blue);
+  outline:none;
+}
+.login-card button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:var(--bleed-blue);
+  color:white;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+  box-shadow:0 0 35px var(--bleed-blue-glow);
+  transition:.2s ease;
+}
+.login-card button:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 55px var(--bleed-blue-glow);
+}
+#errorMsg{
+  color:var(--bleed-red);
+  font-size:14px;
+  margin-top:12px;
+  display:none;
+}
+
+/* ===== WARNING BOX INSIDE CARD ===== */
+.warning-box{
+  background: linear-gradient(90deg, rgba(255,193,7,0.2), rgba(255,193,7,0.05));
+  border:1px solid var(--bleed-yellow);
+  padding:12px 20px;
+  border-radius:10px;
+  color:var(--bleed-yellow);
+  font-weight:500;
+  text-align:center;
+  margin-bottom:25px;
+  box-shadow:0 0 15px var(--bleed-yellow-glow);
+}
+
+/* Responsive */
+@media(max-width:480px){
+  .login-card{ padding:35px 25px; }
+  .login-card h2{ font-size:24px; }
+  .warning-box{ font-size:14px; padding:10px 15px; }
+}
+</style>
+</head>
+<body>
+
+<div class="stars"></div>
+
+<div class="login-card">
+  <h2>OpsLink Servers Login</h2>
+  <div class="warning-box">
+    ⚠️ This Website is for OpsLink Server Premium Users. Access is audited, and unauthorized attempts are not allowed.
+  </div>
+  <form id="loginForm">
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button type="submit">Login</button>
+    <div id="errorMsg"></div>
+  </form>
+</div>
+
+<script>
+// ===== STARS GENERATOR =====
+const starsContainer = document.querySelector('.stars');
+const starCount = 120;
+for(let i=0;i<starCount;i++){
+  const star = document.createElement('div');
+  star.classList.add('star');
+  const size = Math.random()*3+1;
+  star.style.width = `${size}px`;
+  star.style.height = `${size}px`;
+  star.style.top = `${Math.random()*100}%`;
+  star.style.left = `${Math.random()*100}%`;
+  star.style.animationDuration = `${Math.random()*5+3}s`;
+  starsContainer.appendChild(star);
+}
+
+// ===== LOGIN HANDLER =====
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const errorDiv = document.getElementById('errorMsg');
+
+  try {
+    const res = await fetch('https://opslinkservers-backend.onrender.com/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+
+    if(res.ok && data.token){
+      localStorage.setItem('opslinkToken', data.token);
+      window.location.href = 'guilds.html';
+    } else {
+      errorDiv.innerText = data.message || 'Login failed';
+      errorDiv.style.display = 'block';
+    }
+  } catch(err){
+    console.error(err);
+    errorDiv.innerText = 'Network error';
+    errorDiv.style.display = 'block';
+  }
+});
+</script>
+
+</body>
+</html>
