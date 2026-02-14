@@ -194,20 +194,7 @@ nav{
 </div>
 
 <script>
-/* ===== STARS ===== */
-const stars = document.querySelector('.stars');
-for (let i = 0; i < 120; i++) {
-  const s = document.createElement('div');
-  s.className = 'star';
-  const size = Math.random() * 3 + 1;
-  s.style.width = s.style.height = `${size}px`;
-  s.style.top = `${Math.random() * 100}%`;
-  s.style.left = `${Math.random() * 100}%`;
-  s.style.animationDuration = `${Math.random() * 6 + 4}s`;
-  stars.appendChild(s);
-}
-
-/* ===== AUTH ===== */
+const API_URL = 'https://opslinkservers-backend.onrender.com';
 const token = localStorage.getItem('opslinkToken');
 const userStr = localStorage.getItem('opslinkUser');
 if (!token || !userStr) window.location.href = 'index.html';
@@ -215,75 +202,73 @@ if (!token || !userStr) window.location.href = 'index.html';
 const user = JSON.parse(userStr);
 const isAdmin = user.role === 'admin';
 
-function logout() {
-  localStorage.removeItem('opslinkToken');
-  localStorage.removeItem('opslinkUser');
-  window.location.href = 'index.html';
+const container = document.getElementById('servers') || document.body; // adjust to your servers div
+
+let lastStatuses = {};
+
+/* ===== FETCH HELPERS ===== */
+async function fetchWithAuth(url) {
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error('Failed to fetch');
+  return res.json();
 }
 
-/* ===== HELPERS ===== */
-async function fetchWithAuth(url, options = {}) {
-  options.headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
-  const res = await fetch(url, options);
-
-  if (res.status === 401) {
-    logout();
-    throw new Error('Unauthorized');
+/* ===== RENDER SERVERS ===== */
+function renderServers(servers) {
+  container.innerHTML = '';
+  if (!servers.length) {
+    container.innerHTML = `<p class="text-zinc-400">No servers found.</p>`;
+    return;
   }
 
-  if (!res.ok) throw new Error('Request failed');
-  return res;
+  servers.forEach(s => {
+    const div = document.createElement('div');
+    div.className = `p-4 rounded border mb-3 ${
+      s.status === 'approved' ? 'border-green-500 bg-green-900/30' :
+      s.status === 'denied' ? 'border-red-500 bg-red-900/30' :
+      'border-zinc-700 bg-zinc-900/50'
+    }`;
+
+    let statusMsg = '';
+    if (s.status === 'pending') statusMsg = 'Pending review.';
+    if (s.status === 'approved') statusMsg = 'Approved and live.';
+    if (s.status === 'denied') statusMsg = `Denied: ${s.rejectionReason || 'No reason provided.'}`;
+
+    if (lastStatuses[s._id] && lastStatuses[s._id] !== s.status) {
+      alert(`Server "${s.name}" status changed: ${s.status.toUpperCase()}`);
+    }
+    lastStatuses[s._id] = s.status;
+
+    div.innerHTML = `
+      <h3 class="font-semibold text-lg">${s.name}</h3>
+      <p class="text-sm text-zinc-300 mb-2">${statusMsg}</p>
+      ${s.invite && s.status === 'approved' ? `<a href="${s.invite}" target="_blank" class="text-blue-400 underline text-sm">Join Server</a>` : ''}
+      <a class="btn mt-2 inline-block" href="dashboard.html?server=${s._id}">View Dashboard</a>
+    `;
+    container.appendChild(div);
+  });
 }
 
 /* ===== LOAD SERVERS ===== */
-(async function loadServers() {
-  const container = document.getElementById('servers');
-
+async function loadServers() {
   try {
-    // Admins see the basic approved servers, users see only their own
     const endpoint = isAdmin
-      ? 'https://opslinkservers-backend.onrender.com/servers/'
-      : 'https://opslinkservers-backend.onrender.com/servers/mine';
+      ? `${API_URL}/api/servers` // admin sees approved servers
+      : `${API_URL}/api/servers/mine`; // user sees only their servers
 
-    const res = await fetchWithAuth(endpoint);
-    const servers = await res.json();
-
-    if (!servers.length) {
-      container.innerHTML = `<div class="empty">No servers found.</div>`;
-      return;
-    }
-
-    // Render servers
-    servers.forEach(s => {
-      const card = document.createElement('div');
-      card.className = 'card';
-      card.innerHTML = `
-        <div class="server-header">
-          <img src="${s.logo}" alt="Server Logo">
-          <div class="server-name">${s.name}</div>
-        </div>
-
-        <div class="server-desc">
-          ${s.description || 'No description provided.'}
-        </div>
-
-        <div class="meta">
-          <div>Members: ${s.members ?? 0}</div>
-          <div class="status ${s.status}">${s.status.toUpperCase()}</div>
-        </div>
-
-        <a class="btn" href="dashboard.html?server=${s._id}">View Dashboard</a>
-      `;
-      container.appendChild(card);
-    });
-
+    const servers = await fetchWithAuth(endpoint);
+    renderServers(servers);
   } catch (err) {
-    console.error('Error loading servers:', err);
-    logout();
+    container.innerHTML = `<p class="text-red-500">Error loading servers.</p>`;
+    console.error(err);
   }
-})();
+}
 
-
+/* ===== INIT ===== */
+loadServers();
+setInterval(loadServers, 8000); // auto-refresh every 8s
 </script>
 
 
