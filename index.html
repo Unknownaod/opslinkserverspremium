@@ -33,8 +33,6 @@ body{
     radial-gradient(circle at 85% 80%, rgba(78,161,255,.04), transparent 40%),
     linear-gradient(180deg,var(--bleed-background-900) 0%,var(--bleed-background-1000) 100%);
   color:var(--bleed-text);
-  -webkit-font-smoothing:antialiased;
-  -moz-osx-font-smoothing:grayscale;
   display:flex;
   justify-content:center;
   align-items:center;
@@ -176,12 +174,13 @@ for(let i=0;i<starCount;i++){
 // ===== LOGIN HANDLER =====
 document.getElementById('loginForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
   const errorDiv = document.getElementById('errorMsg');
+  errorDiv.style.display = 'none';
 
   try {
-    const res = await fetch('https://opslinkservers-backend.onrender.com/auth/login', {
+    const res = await fetch('https://opslinkservers-backend.onrender.com/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ email, password })
@@ -192,12 +191,13 @@ document.getElementById('loginForm').addEventListener('submit', async (e)=>{
       localStorage.setItem('opslinkToken', data.token);
       window.location.href = 'guilds.html';
     } else {
-      errorDiv.innerText = data.message || 'Login failed';
+      // Show error from backend (supports email not verified)
+      errorDiv.innerText = data.error || 'Login failed';
       errorDiv.style.display = 'block';
     }
   } catch(err){
     console.error(err);
-    errorDiv.innerText = 'Network error';
+    errorDiv.innerText = 'Network error. Try again later.';
     errorDiv.style.display = 'block';
   }
 });
