@@ -274,7 +274,7 @@ function setRange(r) {
   range = r;
   document.querySelectorAll('.time button').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
-  load();
+  loadAnalytics(); // only reload analytics when range changes
 }
 
 // ================= DELTA HELPER =================
@@ -284,7 +284,7 @@ function delta(el, val) {
 }
 
 // ================= FETCH SERVER INFO (guilds.html logic) =================
-async function getServerInfo() {
+async function loadServerInfo() {
   try {
     const userStr = localStorage.getItem('opslinkUser');
     const user = JSON.parse(userStr || '{}');
@@ -301,29 +301,27 @@ async function getServerInfo() {
     const server = servers.find(s => s._id === serverId);
 
     if (!server) throw new Error('Server not found or access denied');
-    return server;
+
+    // Update server header like guilds.html
+    serverName.textContent = server.name;
+    serverIcon.src = server.logo || 'https://via.placeholder.com/80';
+
+    return true;
   } catch (err) {
     console.error('Failed to get server info:', err);
     alert('Unable to load server info. Make sure you have access.');
-    return null;
+    return false;
   }
 }
 
-// ================= LOAD DASHBOARD =================
-async function load() {
-  const server = await getServerInfo();
-  if (!server) return;
-
-  // Update server header like guilds.html
-  serverName.textContent = server.name;
-  serverIcon.src = server.logo || 'https://via.placeholder.com/80';
-
+// ================= FETCH ANALYTICS =================
+async function loadAnalytics() {
   try {
     const res = await fetch(`${ANALYTICS}/analytics/${serverId}/overview?range=${range}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    if (!res.ok) throw new Error('Failed to fetch analytics');
 
+    if (!res.ok) throw new Error('Failed to fetch analytics');
     const data = await res.json();
 
     // User info
@@ -368,12 +366,20 @@ async function load() {
 
   } catch (err) {
     console.error('Failed to load analytics:', err);
+    // Only analytics failed — server info still shows
+    topChannels.innerHTML = `<p class="text-zinc-400 py-5 text-center">Analytics unavailable</p>`;
+    topMembers.innerHTML = `<p class="text-zinc-400 py-5 text-center">Analytics unavailable</p>`;
     alert('Failed to load analytics. Try refreshing.');
   }
 }
 
 // ================= INIT =================
-load();
+(async () => {
+  const success = await loadServerInfo(); // always fetch server info first
+  if (success) {
+    loadAnalytics(); // try loading analytics, but won't break the page if it fails
+  }
+})();
 </script>
 
 
