@@ -351,7 +351,7 @@ const BACKEND = 'https://opslinkservers-backend.onrender.com';
 const elements = {
   members: document.getElementById('members'),
   messages: document.getElementById('messages'),
-  voice: document.getElementById('voice'),
+  voice: document.getElementById('voice'), // VC minutes box
   joins: document.getElementById('joins'),
 
   membersDelta: document.getElementById('membersDelta'),
@@ -448,7 +448,10 @@ async function loadAnalytics() {
     // CURRENT METRICS
     elements.members.textContent = data.members?.current ?? 0;
     elements.messages.textContent = data.messages?.current ?? 0;
-    elements.voice.textContent = data.voice?.current ?? 0;
+
+    // FIX: Show actual VC minutes in box
+    elements.voice.textContent = Math.round(data.voice?.minutes ?? 0);
+
     elements.joins.textContent = data.joins?.current ?? 0;
 
     elements.textChannels.textContent = data.textChannelsCount ?? 0;
@@ -473,17 +476,17 @@ async function loadAnalytics() {
     // TOP MEMBERS
     elements.topMembers.innerHTML = '';
     (data.topMembers || []).forEach(m => {
-      elements.topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.activityScore}</span></div>`;
+      elements.topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${Math.round(m.activityScore)}</span></div>`;
     });
 
     // =========================
     // CHARTS
     // =========================
     const charts = [
-      { ctx: elements.activityChart, data: data.chart, type: 'line', key: 'activity', fields: ['members','messages','voice','joins','voiceMinutes'] },
+      { ctx: elements.activityChart, data: data.chart, type: 'line', key: 'activity', fields: ['members','messages','voiceMinutes','joins'] },
       { ctx: elements.messagesChart, data: data.chart, type: 'bar', key: 'messages', fields: ['messages'] },
       { ctx: elements.membersChart, data: data.chart, type: 'line', key: 'members', fields: ['members'] },
-      { ctx: elements.voiceChart, data: data.chart, type: 'line', key: 'voice', fields: ['voice','voiceMinutes'] }
+      { ctx: elements.voiceChart, data: data.chart, type: 'line', key: 'voice', fields: ['voiceMinutes'] } // show VC minutes
     ];
 
     charts.forEach(c => {
@@ -495,7 +498,7 @@ async function loadAnalytics() {
         data: c.data[f] || [],
         borderColor: f === 'members' ? '#4ea1ff' :
                      f === 'messages' ? '#22c55e' :
-                     f === 'voice' ? '#ef4444' :
+                     f === 'voiceMinutes' ? '#ef4444' :
                      f === 'joins' ? '#fbbf24' :
                      '#d946ef',
         backgroundColor: 'rgba(78,161,255,0.2)',
