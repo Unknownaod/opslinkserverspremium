@@ -92,7 +92,6 @@ canvas{height:260px!important;}
     </div>
   </div>
 
-  <!-- OVERVIEW -->
   <div id="overview" class="section active">
     <div class="grid">
       <div class="card">
@@ -136,22 +135,20 @@ canvas{height:260px!important;}
 
 <script>
 const token = localStorage.getItem('opslinkToken');
-if (!token) location.href = 'login.html';
+if(!token) location.href='index.html';
 const serverId = new URLSearchParams(location.search).get('server');
 const BACKEND = 'https://opslinkservers-backend.onrender.com';
-const ANALYTICS_API = 'https://opslinkserversapi.onrender.com';
 let range = '7d';
 
-// ===== NAV & RANGE =====
 function nav(id){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
   event.target.classList.add('active');
-  pageTitle.textContent = id.charAt(0).toUpperCase() + id.slice(1);
+  pageTitle.textContent = id.charAt(0).toUpperCase()+id.slice(1);
 }
 function setRange(r){
-  range = r;
+  range=r;
   document.querySelectorAll('.time button').forEach(b=>b.classList.remove('active'));
   event.target.classList.add('active');
   loadAnalytics();
@@ -161,37 +158,34 @@ function delta(el,val){
   el.className=`delta ${val>=0?'up':'down'}`;
 }
 
-// ===== LOAD SERVER INFO LIKE GUILDS.HTML =====
 async function loadGuildInfo(){
-  try {
+  try{
     const user = JSON.parse(localStorage.getItem('opslinkUser')||'{}');
     const endpoint = user.role==='admin' ? `${BACKEND}/api/servers` : `${BACKEND}/api/servers/mine`;
-    const res = await fetch(endpoint,{ headers:{ Authorization:`Bearer ${token}` }});
+    const res = await fetch(endpoint,{headers:{Authorization:`Bearer ${token}`}});
     if(!res.ok) throw new Error('Failed to fetch servers');
     const servers = await res.json();
     const server = servers.find(s=>s._id===serverId);
     if(!server) throw new Error('Server not found');
 
-    // Update UI
     serverName.textContent = server.name;
-    serverIcon.src = server.logo || 'https://via.placeholder.com/80';
-    // Optional extra elements
-    serverMembers = document.getElementById('members'); 
-    serverMembers.textContent = server.members ?? 0;
+    serverIcon.src = server.logo||'https://via.placeholder.com/80';
+    username.textContent = user.username||'—';
+    userAvatar.src = user.avatar||'https://via.placeholder.com/40';
+    userRole.textContent = user.role||'—';
 
     return true;
-  } catch(err){
+  }catch(err){
     console.error('Failed to get server info:',err);
     alert('Unable to load server info.');
     return false;
   }
 }
 
-// ===== LOAD ANALYTICS =====
 async function loadAnalytics(){
   try{
-    const res = await fetch(`${ANALYTICS_API}/analytics/${serverId}/overview?range=${range}`,{
-      headers:{ Authorization:`Bearer ${token}` }
+    const res = await fetch(`${BACKEND}/api/analytics/${serverId}?range=${range}`,{
+      headers:{Authorization:`Bearer ${token}`}
     });
     if(!res.ok) throw new Error('Failed to fetch analytics');
     const data = await res.json();
@@ -206,29 +200,28 @@ async function loadAnalytics(){
     delta(voiceDelta,data.voice.delta);
     delta(joinsDelta,data.joins.delta);
 
-    topChannels.innerHTML = '';
+    topChannels.innerHTML='';
     data.topChannels.forEach(c=>{
-      topChannels.innerHTML += `<div class="row"><span>#${c.name}</span><span>${c.value}</span></div>`;
+      topChannels.innerHTML += `<div class="row"><span>#${c.name}</span><span>${c.count}</span></div>`;
     });
 
-    topMembers.innerHTML = '';
+    topMembers.innerHTML='';
     data.topMembers.forEach(m=>{
-      topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.value}</span></div>`;
+      topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.count}</span></div>`;
     });
 
     new Chart(activityChart,{
       type:'line',
-      data:{ labels:data.chart.labels, datasets:[{ data:data.chart.data, borderColor:'#4ea1ff', tension:.4 }] },
-      options:{ plugins:{ legend:{ display:false } } }
+      data:{labels:data.chart.labels,datasets:[{data:data.chart.data,borderColor:'#4ea1ff',tension:.4}]},
+      options:{plugins:{legend:{display:false}}}
     });
 
-  } catch(err){
+  }catch(err){
     console.error('Analytics load failed:',err);
   }
 }
 
-// ===== INIT =====
-(async ()=>{
+(async()=>{
   const loaded = await loadGuildInfo();
   if(loaded) loadAnalytics();
 })();
