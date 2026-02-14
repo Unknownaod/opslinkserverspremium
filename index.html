@@ -174,10 +174,12 @@ for(let i=0;i<starCount;i++){
 // ===== LOGIN HANDLER =====
 document.getElementById('loginForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
+  
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value.trim();
   const errorDiv = document.getElementById('errorMsg');
   errorDiv.style.display = 'none';
+  errorDiv.innerHTML = '';
 
   try {
     const res = await fetch('https://opslinkservers-backend.onrender.com/api/auth/login', {
@@ -185,16 +187,45 @@ document.getElementById('loginForm').addEventListener('submit', async (e)=>{
       headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ email, password })
     });
+
     const data = await res.json();
 
     if(res.ok && data.token){
+      // Successful login
       localStorage.setItem('opslinkToken', data.token);
       window.location.href = 'guilds.html';
-    } else {
-      // Show error from backend (supports email not verified)
-      errorDiv.innerText = data.error || 'Login failed';
-      errorDiv.style.display = 'block';
+      return;
     }
+
+    // Email not verified (403) → show resend link
+    if(res.status === 403 && data.error?.includes('verify your email')){
+      errorDiv.innerHTML = `
+        ${data.error} <br>
+        <a href="#" id="resend">Resend Verification Email</a>
+      `;
+      errorDiv.style.display = 'block';
+
+      document.getElementById('resend').addEventListener('click', async ()=>{
+        try {
+          const resendRes = await fetch('https://opslinkservers-backend.onrender.com/api/auth/resend-verification', {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json' },
+            body: JSON.stringify({ email })
+          });
+          const resendData = await resendRes.json();
+          alert(resendData.message || 'Verification email resent');
+        } catch(err){
+          console.error(err);
+          alert('Failed to resend verification email');
+        }
+      });
+      return;
+    }
+
+    // Other backend errors
+    errorDiv.innerText = data.error || 'Login failed';
+    errorDiv.style.display = 'block';
+
   } catch(err){
     console.error(err);
     errorDiv.innerText = 'Network error. Try again later.';
@@ -202,6 +233,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e)=>{
   }
 });
 </script>
+
 
 </body>
 </html>
