@@ -462,31 +462,43 @@ async function loadAnalytics() {
       elements.topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.count}</span></div>`;
     });
 
-    // Charts
-    const charts = [
-      { ctx: elements.activityChart, data: data.chart, type: 'line', key: 'activity' },
-      { ctx: elements.messagesChart, data: data.chart, type: 'bar', key: 'messages' },
-      { ctx: elements.membersChart, data: data.chart, type: 'line', key: 'members' },
-      { ctx: elements.voiceChart, data: data.chart, type: 'line', key: 'voice' }
-    ];
+// Charts
+const charts = [
+  { ctx: elements.activityChart, data: data.chart, type: 'line', key: 'activity', field: ['members','messages','voice','joins'] },
+  { ctx: elements.messagesChart, data: data.chart, type: 'bar', key: 'messages', field: 'messages' },
+  { ctx: elements.membersChart, data: data.chart, type: 'line', key: 'members', field: 'members' },
+  { ctx: elements.voiceChart, data: data.chart, type: 'line', key: 'voice', field: 'voice' }
+];
 
-    charts.forEach(c => {
-      if (!c.ctx) return;
-      if (chartInstances[c.key]) chartInstances[c.key].destroy();
-      chartInstances[c.key] = new Chart(c.ctx, {
-        type: c.type,
-        data: {
-          labels: c.data?.labels || [],
-          datasets: [{ data: c.data?.data || [], borderColor: '#4ea1ff', backgroundColor: 'rgba(78,161,255,0.2)', tension: 0.4 }]
-        },
-        options: { plugins: { legend: { display: false } } }
-      });
-    });
+charts.forEach(c => {
+  if (!c.ctx) return;
+  if (chartInstances[c.key]) chartInstances[c.key].destroy();
 
-  } catch (err) {
-    console.error('Failed to load analytics:', err);
-  }
-}
+  // For the main activityChart, we combine multiple datasets
+  const datasets = Array.isArray(c.field)
+    ? c.field.map(f => ({
+        label: f.charAt(0).toUpperCase() + f.slice(1),
+        data: c.data[f] || [],
+        borderColor: f === 'members' ? '#4ea1ff' :
+                     f === 'messages' ? '#22c55e' :
+                     f === 'voice' ? '#ef4444' : '#fbbf24',
+        backgroundColor: 'rgba(78,161,255,0.2)',
+        tension: 0.4
+      }))
+    : [{
+        label: c.field.charAt(0).toUpperCase() + c.field.slice(1),
+        data: c.data[c.field] || [],
+        borderColor: '#4ea1ff',
+        backgroundColor: 'rgba(78,161,255,0.2)',
+        tension: 0.4
+      }];
+
+  chartInstances[c.key] = new Chart(c.ctx, {
+    type: c.type,
+    data: { labels: c.data.labels || [], datasets },
+    options: { plugins: { legend: { display: true } } }
+  });
+});
 
 // --------------------------
 (async () => {
