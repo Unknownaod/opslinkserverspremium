@@ -109,10 +109,10 @@ canvas { height: 260px!important; }
     </div>
   </div>
   <div class="nav">
-    <button class="active" onclick="nav('overview')"><i class='bx bx-home'></i>Overview</button>
-    <button onclick="nav('messages')"><i class='bx bx-message-rounded-dots'></i>Messages</button>
-    <button onclick="nav('membersPage')"><i class='bx bx-group'></i>Members</button>
-    <button onclick="nav('voicePage')"><i class='bx bx-headphone'></i>Voice</button>
+    <button class="active" onclick="nav('overview', event)"><i class='bx bx-home'></i>Overview</button>
+    <button onclick="nav('messages', event)"><i class='bx bx-message-rounded-dots'></i>Messages</button>
+    <button onclick="nav('membersPage', event)"><i class='bx bx-group'></i>Members</button>
+    <button onclick="nav('voicePage', event)"><i class='bx bx-headphone'></i>Voice</button>
   </div>
 </div>
 
@@ -123,10 +123,10 @@ canvas { height: 260px!important; }
     <div class="subtitle">Server analytics snapshot</div>
   </div>
   <div class="time">
-    <button class="active" onclick="setRange('24h')">24h</button>
-    <button onclick="setRange('7d')">7d</button>
-    <button onclick="setRange('30d')">30d</button>
-    <button onclick="setRange('90d')">90d</button>
+    <button class="active" onclick="setRange('24h', event)">24h</button>
+    <button onclick="setRange('7d', event)">7d</button>
+    <button onclick="setRange('30d', event)">30d</button>
+    <button onclick="setRange('90d', event)">90d</button>
   </div>
 </div>
 
@@ -196,26 +196,139 @@ canvas { height: 260px!important; }
 </div>
 
 <script>
+// STARS
 const starsContainer = document.querySelector('.stars');
-for (let i=0;i<120;i++){const s=document.createElement('div');s.classList.add('star');const size=Math.random()*3+1;s.style.width=size+'px';s.style.height=size+'px';s.style.top=Math.random()*100+'%';s.style.left=Math.random()*100+'%';s.style.animationDuration=(Math.random()*5+3)+'s';starsContainer.appendChild(s);}
+for(let i=0;i<120;i++){const s=document.createElement('div');s.classList.add('star');const size=Math.random()*3+1;s.style.width=size+'px';s.style.height=size+'px';s.style.top=Math.random()*100+'%';s.style.left=Math.random()*100+'%';s.style.animationDuration=(Math.random()*5+3)+'s';starsContainer.appendChild(s);}
 
-const token=localStorage.getItem('opslinkToken');if(!token)location.href='login.html';
-let serverId=new URLSearchParams(location.search).get('server'),range='7d',BACKEND='https://opslinkservers-backend.onrender.com';
+// GLOBALS
+const token = localStorage.getItem('opslinkToken');
+if(!token) location.href='login.html';
+let serverId = new URLSearchParams(location.search).get('server'), range='7d', BACKEND='https://opslinkservers-backend.onrender.com';
 
-const elements={members:document.getElementById('members'),messages:document.getElementById('messages'),voice:document.getElementById('voice'),joins:document.getElementById('joins'),membersDelta:document.getElementById('membersDelta'),messagesDelta:document.getElementById('messagesDelta'),voiceDelta:document.getElementById('voiceDelta'),joinsDelta:document.getElementById('joinsDelta'),textChannels:document.getElementById('textChannels'),voiceChannels:document.getElementById('voiceChannels'),rolesCount:document.getElementById('rolesCount'),emojisCount:document.getElementById('emojisCount'),boosts:document.getElementById('boosts'),afkMembers:document.getElementById('afkMembers'),topChannels:document.getElementById('topChannels'),topMembers:document.getElementById('topMembers'),activityChart:document.getElementById('activityChart')?.getContext('2d'),messagesChart:document.getElementById('messagesChart')?.getContext('2d'),membersChart:document.getElementById('membersChart')?.getContext('2d'),voiceChart:document.getElementById('voiceChart')?.getContext('2d')};
+const elements = {
+  members: document.getElementById('members'),
+  messages: document.getElementById('messages'),
+  voice: document.getElementById('voice'),
+  joins: document.getElementById('joins'),
+  membersDelta: document.getElementById('membersDelta'),
+  messagesDelta: document.getElementById('messagesDelta'),
+  voiceDelta: document.getElementById('voiceDelta'),
+  joinsDelta: document.getElementById('joinsDelta'),
+  textChannels: document.getElementById('textChannels'),
+  voiceChannels: document.getElementById('voiceChannels'),
+  rolesCount: document.getElementById('rolesCount'),
+  emojisCount: document.getElementById('emojisCount'),
+  boosts: document.getElementById('boosts'),
+  afkMembers: document.getElementById('afkMembers'),
+  topChannels: document.getElementById('topChannels'),
+  topMembers: document.getElementById('topMembers'),
+  activityChart: document.getElementById('activityChart')?.getContext('2d'),
+  messagesChart: document.getElementById('messagesChart')?.getContext('2d'),
+  membersChart: document.getElementById('membersChart')?.getContext('2d'),
+  voiceChart: document.getElementById('voiceChart')?.getContext('2d')
+};
 
-let chartInstances={};
+let chartInstances = {};
 
-function nav(section){document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById(section).classList.add('active');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');}
-function setRange(r){range=r;document.querySelectorAll('.time button').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');loadAnalytics();}
-function renderDelta(elem,value){const abs=Math.abs(value);elem.textContent=value>=0?`+${abs} more since last period`:`-${abs} since last period`;elem.className='delta '+(value>=0?'up':'down');}
+// HELPERS
+function nav(section, event){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(section).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+}
 
-async function loadGuildInfo(){try{const user=JSON.parse(localStorage.getItem('opslinkUser')||'{}'),endpoint=user.role==='admin'?`${BACKEND}/api/servers`:`${BACKEND}/api/servers/mine`,res=await fetch(endpoint,{headers:{Authorization:`Bearer ${token}`}}),servers=await res.json(),server=servers.find(s=>s.discordServerId===serverId||s._id===serverId);if(!server)throw new Error('Server not found');serverId=server.discordServerId;document.getElementById('serverName').textContent=server.name;document.getElementById('serverIcon').src=server.logo||'https://via.placeholder.com/52';document.getElementById('username').textContent=user.discordUsername;document.getElementById('userRole').textContent=user.role?.toUpperCase();document.getElementById('userAvatar').src=`https://cdn.discordapp.com/avatars/${user.discordUserID}/${user.discordAvatar}.png`;return true}catch(err){console.error('Failed to load server/user info:',err);return false;}}
+function setRange(r, event){
+  range = r;
+  document.querySelectorAll('.time button').forEach(b=>b.classList.remove('active'));
+  event.target.classList.add('active');
+  loadAnalytics();
+}
 
-async function loadAnalytics(){try{const res=await fetch(`${BACKEND}/api/analytics/${serverId}?range=${range}`,{headers:{Authorization:`Bearer ${token}`}}),data=await res.json();elements.members.textContent=data.members?.current??0;elements.messages.textContent=data.messages?.current??0;elements.voice.textContent=Math.round(data.voice?.minutes??0);elements.joins.textContent=data.joins?.current??0;elements.textChannels.textContent=data.textChannelsCount??0;elements.voiceChannels.textContent=data.voiceChannelsCount??0;elements.rolesCount.textContent=data.rolesCount??0;elements.emojisCount.textContent=data.emojisCount??0;elements.boosts.textContent=data.boosts??0;elements.afkMembers.textContent=data.afkMembers??0;renderDelta(elements.membersDelta,data.members?.delta??0);renderDelta(elements.messagesDelta,data.messages?.delta??0);renderDelta(elements.voiceDelta,data.voice?.delta??0);renderDelta(elements.joinsDelta,data.joins?.delta??0);elements.topChannels.innerHTML='';(data.topChannels||[]).forEach(c=>{elements.topChannels.innerHTML+=`<div class="row"><span>#${c.name}</span><span>${c.count}</span></div>`});elements.topMembers.innerHTML='';(data.topMembers||[]).forEach(m=>{elements.topMembers.innerHTML+=`<div class="row"><span>${m.name}</span><span>${Math.round(m.activityScore)}</span></div>`});const charts=[{ctx:elements.activityChart,data:data.chart,type:'line',key:'activity',fields:['members','messages','voiceMinutes','joins']},{ctx:elements.messagesChart,data:data.chart,type:'bar',key:'messages',fields:['messages']},{ctx:elements.membersChart,data:data.chart,type:'line',key:'members',fields:['members']},{ctx:elements.voiceChart,data:data.chart,type:'line',key:'voice',fields:['voiceMinutes']}];charts.forEach(c=>{if(!c.ctx)return;if(chartInstances[c.key])chartInstances[c.key].destroy();const datasets=c.fields.map(f=>({label:f.charAt(0).toUpperCase()+f.slice(1),data:c.data[f]||[],borderColor:f==='members'?'#4ea1ff':f==='messages'?'#22c55e':f==='voiceMinutes'?'#ef4444':f==='joins'?'#fbbf24':'#d946ef',backgroundColor:'rgba(78,161,255,0.2)',tension:0.4}));chartInstances[c.key]=new Chart(c.ctx,{type:c.type,data:{labels:c.data.labels||[],datasets},options:{plugins:{legend:{display:true}},responsive:true,maintainAspectRatio:false}});});}catch(err){console.error('Analytics error:',err);}
+function renderDelta(elem, value){
+  const abs = Math.abs(value);
+  elem.textContent = value>=0?`+${abs} more since last period`:`-${abs} since last period`;
+  elem.className = 'delta ' + (value>=0?'up':'down');
+}
 
-(async()=>{const ok=await loadGuildInfo();if(ok)loadAnalytics();})();
-setInterval(loadAnalytics,30000);
+// LOAD SERVER INFO
+async function loadGuildInfo(){
+  try{
+    const user = JSON.parse(localStorage.getItem('opslinkUser')||'{}');
+    const endpoint = user.role==='admin'?`${BACKEND}/api/servers`:`${BACKEND}/api/servers/mine`;
+    const res = await fetch(endpoint,{headers:{Authorization:`Bearer ${token}`}});
+    const servers = await res.json();
+    const server = servers.find(s=>s.discordServerId===serverId||s._id===serverId);
+    if(!server) throw new Error('Server not found');
+    serverId = server.discordServerId;
+
+    document.getElementById('serverName').textContent = server.name;
+    document.getElementById('serverIcon').src = server.logo || 'https://via.placeholder.com/52';
+    document.getElementById('username').textContent = user.discordUsername;
+    document.getElementById('userRole').textContent = user.role?.toUpperCase();
+    document.getElementById('userAvatar').src = `https://cdn.discordapp.com/avatars/${user.discordUserID}/${user.discordAvatar}.png`;
+    return true;
+  }catch(err){ console.error('Failed to load server/user info:',err); return false; }
+}
+
+// LOAD ANALYTICS
+async function loadAnalytics(){
+  try{
+    const res = await fetch(`${BACKEND}/api/analytics/${serverId}?range=${range}`,{headers:{Authorization:`Bearer ${token}`}});
+    const data = await res.json();
+
+    elements.members.textContent = data.members?.current ?? 0;
+    elements.messages.textContent = data.messages?.current ?? 0;
+    elements.voice.textContent = Math.round(data.voice?.minutes ?? 0);
+    elements.joins.textContent = data.joins?.current ?? 0;
+    elements.textChannels.textContent = data.textChannelsCount ?? 0;
+    elements.voiceChannels.textContent = data.voiceChannelsCount ?? 0;
+    elements.rolesCount.textContent = data.rolesCount ?? 0;
+    elements.emojisCount.textContent = data.emojisCount ?? 0;
+    elements.boosts.textContent = data.boosts ?? 0;
+    elements.afkMembers.textContent = data.afkMembers ?? 0;
+
+    renderDelta(elements.membersDelta, data.members?.delta ?? 0);
+    renderDelta(elements.messagesDelta, data.messages?.delta ?? 0);
+    renderDelta(elements.voiceDelta, data.voice?.delta ?? 0);
+    renderDelta(elements.joinsDelta, data.joins?.delta ?? 0);
+
+    elements.topChannels.innerHTML = '';
+    (data.topChannels||[]).forEach(c=>{
+      elements.topChannels.innerHTML += `<div class="row"><span>#${c.name}</span><span>${c.count}</span></div>`;
+    });
+
+    elements.topMembers.innerHTML = '';
+    (data.topMembers||[]).forEach(m=>{
+      elements.topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${Math.round(m.activityScore)}</span></div>`;
+    });
+
+    const charts = [
+      {ctx:elements.activityChart,data:data.chart,type:'line',key:'activity',fields:['members','messages','voiceMinutes','joins']},
+      {ctx:elements.messagesChart,data:data.chart,type:'bar',key:'messages',fields:['messages']},
+      {ctx:elements.membersChart,data:data.chart,type:'line',key:'members',fields:['members']},
+      {ctx:elements.voiceChart,data:data.chart,type:'line',key:'voice',fields:['voiceMinutes']}
+    ];
+
+    charts.forEach(c=>{
+      if(!c.ctx) return;
+      if(chartInstances[c.key]) chartInstances[c.key].destroy();
+      const datasets = c.fields.map(f=>({
+        label: f.charAt(0).toUpperCase()+f.slice(1),
+        data: c.data[f] || [],
+        borderColor: f==='members'?'#4ea1ff':f==='messages'?'#22c55e':f==='voiceMinutes'?'#ef4444':f==='joins'?'#fbbf24':'#d946ef',
+        backgroundColor:'rgba(78,161,255,0.2)',
+        tension:0.4
+      }));
+      chartInstances[c.key] = new Chart(c.ctx,{type:c.type,data:{labels:c.data.labels||[],datasets},options:{plugins:{legend:{display:true}},responsive:true,maintainAspectRatio:false}});
+    });
+
+  }catch(err){ console.error('Analytics error:',err); }
+}
+
+// INIT
+(async()=>{ const ok = await loadGuildInfo(); if(ok) loadAnalytics(); })();
+setInterval(loadAnalytics, 30000);
 </script>
 
 </body>
