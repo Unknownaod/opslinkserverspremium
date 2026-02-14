@@ -192,6 +192,24 @@ canvas { height: 260px!important; }
   </div>
 </div>
 
+<!-- Messages Section -->
+<div id="messages" class="section">
+  <div class="grid">
+    <div class="card full">
+      <h3>Message Activity</h3>
+      <canvas id="messagesChart"></canvas>
+    </div>
+
+    <div class="card full">
+      <h3>Recent Messages</h3>
+      <div id="messagesList" class="list" style="max-height: 400px; overflow-y: auto;">
+        <!-- Messages will be injected here -->
+      </div>
+    </div>
+  </div>
+</div>
+
+  
 <!-- Settings -->
 <div id="settingPage" class="section">
   <h2>Settings</h2>
@@ -432,6 +450,75 @@ async function loadAnalytics() {
   } catch (err) { console.error('Analytics error:', err); }
 }
 
+// ---------------------------
+// LOAD MESSAGES DATA
+// ---------------------------
+async function loadMessages() {
+  try {
+    const res = await fetch(`${BACKEND}/api/analytics/${serverId}/messages?range=${range}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    // Chart
+    const chartCtx = elements.messagesChart;
+    if (chartCtx && data.chart) {
+      if (chartInstances.messages) chartInstances.messages.destroy();
+
+      chartInstances.messages = new Chart(chartCtx, {
+        type: 'bar',
+        data: {
+          labels: data.chart.labels || [],
+          datasets: [{
+            label: 'Messages',
+            data: data.chart.messages || [],
+            backgroundColor: 'rgba(78,161,255,0.4)',
+            borderColor: '#4ea1ff',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true } },
+          plugins: { legend: { display: true } }
+        }
+      });
+    }
+
+    // Recent messages list
+    const list = document.getElementById('messagesList');
+    if (list) {
+      list.innerHTML = (data.recentMessages || []).map(msg => `
+        <div class="row" style="justify-content: space-between; align-items: center; padding:8px 12px; background: var(--bg-900); border-radius:10px; border:1px solid var(--border);">
+          <div>
+            <strong style="color: var(--blue);">${msg.user}</strong>: ${msg.content}
+          </div>
+          <div style="font-size:12px; color: var(--muted);">${new Date(msg.timestamp).toLocaleString()}</div>
+        </div>
+      `).join('');
+    }
+
+  } catch (err) {
+    console.error('Failed to load messages:', err);
+  }
+}
+
+// Call it when switching to messages page
+function nav(section, event) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(section).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const titles = { overview: 'Overview', messages: 'Messages', membersPage: 'Members', voicePage: 'Voice', settingPage: 'Settings' };
+  document.getElementById('pageTitle').textContent = titles[section] || '';
+  
+  if (section === 'settingPage') loadSettingsInfo();
+  if (section === 'messages') loadMessages(); // ✅ load messages
+}
+
+  
 // ---------------------------
 // SELF-CONTAINED TOAST & CONFIRM PROMPT
 // ---------------------------
