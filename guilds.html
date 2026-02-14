@@ -213,6 +213,7 @@ if (!token) window.location.href = 'index.html';
 
 function logout() {
   localStorage.removeItem('opslinkToken');
+  localStorage.removeItem('opslinkUser');
   window.location.href = 'index.html';
 }
 
@@ -232,7 +233,6 @@ async function fetchWithAuth(url, options = {}) {
   }
 
   if (!res.ok) throw new Error('Request failed');
-
   return res;
 }
 
@@ -245,8 +245,9 @@ async function fetchWithAuth(url, options = {}) {
     if (!decoded?.discordUsername) throw new Error('Invalid token');
 
     // Get user role
-    const roleRes = await fetch(`https://opslinkservers-backend.onrender.com/servers/role/${encodeURIComponent(decoded.discordUsername)}`);
-    if (!roleRes.ok) throw new Error('Failed to get user role');
+    const roleRes = await fetchWithAuth(
+      `https://opslinkservers-backend.onrender.com/servers/role/${encodeURIComponent(decoded.discordUsername)}`
+    );
     const roleData = await roleRes.json();
     const isAdmin = roleData.role === 'admin';
 
@@ -256,7 +257,12 @@ async function fetchWithAuth(url, options = {}) {
       : 'https://opslinkservers-backend.onrender.com/servers/mine';
 
     const res = await fetchWithAuth(endpoint);
-    const servers = await res.json();
+    let servers = await res.json();
+
+    if (isAdmin) {
+      // Admins only see approved servers in this view
+      servers = servers.filter(s => s.status === 'approved');
+    }
 
     if (!servers.length) {
       container.innerHTML = `<div class="empty">No servers found.</div>`;
@@ -269,7 +275,7 @@ async function fetchWithAuth(url, options = {}) {
       card.className = 'card';
       card.innerHTML = `
         <div class="server-header">
-          <img src="${s.logo}" alt="">
+          <img src="${s.logo}" alt="Server Logo">
           <div class="server-name">${s.name}</div>
         </div>
 
@@ -279,14 +285,10 @@ async function fetchWithAuth(url, options = {}) {
 
         <div class="meta">
           <div>Members: ${s.members ?? 0}</div>
-          <div class="status ${s.status}">
-            ${s.status.toUpperCase()}
-          </div>
+          <div class="status ${s.status}">${s.status.toUpperCase()}</div>
         </div>
 
-        <a class="btn" href="dashboard.html?server=${s._id}">
-          View Dashboard
-        </a>
+        <a class="btn" href="dashboard.html?server=${s._id}">View Dashboard</a>
       `;
       container.appendChild(card);
     });
