@@ -237,7 +237,8 @@ function renderServers(servers) {
         <div class="status ${s.status}">${s.status.toUpperCase()}</div>
       </div>
 
-      <a class="btn" href="dashboard.html?server=${s._id}">View Dashboard</a>
+      <!-- Updated: Use discordServerId for analytics/dashboard -->
+      <a class="btn" href="dashboard.html?server=${s.discordServerId || s._id}">View Dashboard</a>
     `;
 
     container.appendChild(card);
@@ -276,6 +277,7 @@ function logout() {
 loadServers();
 setInterval(loadServers, 8000);
 </script>
+
 
 
 
