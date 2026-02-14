@@ -209,11 +209,11 @@ for (let i = 0; i < 120; i++) {
 
 /* ===== AUTH ===== */
 const token = localStorage.getItem('opslinkToken');
-const userStr = localStorage.getItem('opslinkUser'); // user object stored on login
+const userStr = localStorage.getItem('opslinkUser');
 if (!token || !userStr) window.location.href = 'index.html';
 
 const user = JSON.parse(userStr);
-const isAdmin = user.role === 'admin'; // use role from localStorage
+const isAdmin = user.role === 'admin';
 
 function logout() {
   localStorage.removeItem('opslinkToken');
@@ -240,16 +240,13 @@ async function fetchWithAuth(url, options = {}) {
   const container = document.getElementById('servers');
 
   try {
-    // choose endpoint based on role
+    // Admins get all servers, users get only their own
     const endpoint = isAdmin
       ? 'https://opslinkservers-backend.onrender.com/servers/all'
       : 'https://opslinkservers-backend.onrender.com/servers/mine';
 
     const res = await fetchWithAuth(endpoint);
-    let servers = await res.json();
-
-    // optionally filter admins to only see approved servers
-    if (isAdmin) servers = servers.filter(s => s.status === 'approved');
+    const servers = await res.json();
 
     if (!servers.length) {
       container.innerHTML = `<div class="empty">No servers found.</div>`;
