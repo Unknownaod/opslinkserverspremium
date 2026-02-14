@@ -392,7 +392,7 @@ async function loadAnalytics() {
     renderDelta(elements.membersDelta, Number(data.members?.delta) || 0);
     renderDelta(elements.messagesDelta, Number(data.messages?.delta) || 0);
     renderDelta(elements.voiceDelta, Number(data.voice?.delta) || 0, 'minutes');
-    renderDelta(elements.joinsDelta, Number(data.joins?.delta) || 0);
+    renderDelta(elements.joinsDelta, Number(data.joins?.delta) || 0); // ✅ joins delta
 
     // Top channels/members
     elements.topChannels.innerHTML = (data.topChannels || []).map(c => `<div class="row"><span>#${c.name}</span><span>${c.count}</span></div>`).join('');
@@ -400,7 +400,7 @@ async function loadAnalytics() {
 
     // Charts
     const charts = [
-      { ctx: elements.activityChart, data: data.chart, type: 'line', key: 'activity', fields: ['members','messages','voiceMinutes','joins'] },
+      { ctx: elements.activityChart, data: data.chart, type: 'line', key: 'activity', fields: ['members','messages','voiceMinutes','joins'] }, // joins included
       { ctx: elements.messagesChart, data: data.chart, type: 'bar', key: 'messages', fields: ['messages'] },
       { ctx: elements.membersChart, data: data.chart, type: 'line', key: 'members', fields: ['members'] },
       { ctx: elements.voiceChart, data: data.chart, type: 'line', key: 'voice', fields: ['voiceMinutes'] }
@@ -468,7 +468,9 @@ document.getElementById('resetRecentSnapshots')?.addEventListener('click', async
 // ---------------------------
 // INIT
 // ---------------------------
-(async () => { if (await loadGuildInfo()) loadAnalytics(); })();
+(async () => { 
+  if (await loadGuildInfo()) loadAnalytics(); 
+})();
 setInterval(loadAnalytics, 30_000);
 </script>
 
