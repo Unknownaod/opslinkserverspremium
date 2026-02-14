@@ -349,7 +349,7 @@ async function loadGuildInfo() {
     document.getElementById('serverIcon').src = server.logo || 'https://via.placeholder.com/52';
     document.getElementById('username').textContent = user.discordUsername;
     document.getElementById('userRole').textContent = user.role?.toUpperCase();
-    document.getElementById('userAvatar').src = `https://cdn.discordapp.com/avatars/${user.discordUserID}/${user.discordAvatar}.png`;
+    document.getElementById('userAvatar').src = `assets/avatar.png`;
     
     return true;
   } catch (err) { 
