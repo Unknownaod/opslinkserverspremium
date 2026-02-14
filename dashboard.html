@@ -265,6 +265,24 @@ const serverId = new URLSearchParams(location.search).get('server');
 const BACKEND = 'https://opslinkservers-backend.onrender.com';
 let range = '7d';
 
+// Elements
+const members = document.getElementById('members');
+const messages = document.getElementById('messages');
+const voice = document.getElementById('voice');
+const joins = document.getElementById('joins');
+
+const membersDelta = document.getElementById('membersDelta');
+const messagesDelta = document.getElementById('messagesDelta');
+const voiceDelta = document.getElementById('voiceDelta');
+const joinsDelta = document.getElementById('joinsDelta');
+
+const topChannels = document.getElementById('topChannels');
+const topMembers = document.getElementById('topMembers');
+const activityChart = document.getElementById('activityChart').getContext('2d');
+
+let chartInstance;
+
+// --------------------------
 function nav(section) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(section).classList.add('active');
@@ -273,11 +291,21 @@ function nav(section) {
   document.getElementById('pageTitle').textContent = section.charAt(0).toUpperCase() + section.slice(1);
 }
 
-function setRange(r) { range = r; document.querySelectorAll('.time button').forEach(b => b.classList.remove('active')); event.target.classList.add('active'); loadAnalytics(); }
+function setRange(r) {
+  range = r;
+  document.querySelectorAll('.time button').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  loadAnalytics();
+}
 
-function delta(elem, val) { elem.textContent = (val >= 0 ? '+' : '') + val; elem.className = val >= 0 ? 'delta up' : 'delta down'; }
+function delta(elem, val) {
+  elem.textContent = (val >= 0 ? '+' : '') + val;
+  elem.className = val >= 0 ? 'delta up' : 'delta down';
+}
 
+// --------------------------
 // Load server and user info
+// --------------------------
 async function loadGuildInfo() {
   try {
     const userStr = localStorage.getItem('opslinkUser');
@@ -287,7 +315,7 @@ async function loadGuildInfo() {
       ? `${BACKEND}/api/servers/all`
       : `${BACKEND}/api/servers/mine`;
 
-    const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` }});
     if (!res.ok) throw new Error('Failed to fetch servers');
 
     const servers = await res.json();
@@ -307,30 +335,45 @@ async function loadGuildInfo() {
   }
 }
 
-// Analytics placeholder (to connect to backend later)
+// --------------------------
+// Load analytics from backend
+// --------------------------
 async function loadAnalytics() {
   try {
-    const res = await fetch(`${BACKEND}/api/analytics/${serverId}?range=${range}`, { headers: { Authorization: `Bearer ${token}` }});
+    const res = await fetch(`${BACKEND}/api/analytics/${serverId}?range=${range}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
     if (!res.ok) throw new Error('Failed to fetch analytics');
 
     const data = await res.json();
-    members.textContent = data.members ?? 0;
-    messages.textContent = data.messages ?? 0;
-    voice.textContent = data.voice ?? 0;
-    joins.textContent = data.joins ?? 0;
 
-    delta(membersDelta, data.membersDelta ?? 0);
-    delta(messagesDelta, data.messagesDelta ?? 0);
-    delta(voiceDelta, data.voiceDelta ?? 0);
-    delta(joinsDelta, data.joinsDelta ?? 0);
+    // Current stats
+    members.textContent = data.members?.current ?? 0;
+    messages.textContent = data.messages?.current ?? 0;
+    voice.textContent = data.voice?.current ?? 0;
+    joins.textContent = data.joins?.current ?? 0;
 
+    // Deltas
+    delta(membersDelta, data.members?.delta ?? 0);
+    delta(messagesDelta, data.messages?.delta ?? 0);
+    delta(voiceDelta, data.voice?.delta ?? 0);
+    delta(joinsDelta, data.joins?.delta ?? 0);
+
+    // Top channels
     topChannels.innerHTML = '';
-    (data.topChannels || []).forEach(c => topChannels.innerHTML += `<div class="row"><span>#${c.name}</span><span>${c.value}</span></div>`);
+    (data.topChannels || []).forEach(c => {
+      topChannels.innerHTML += `<div class="row"><span>#${c.name}</span><span>${c.count}</span></div>`;
+    });
 
+    // Top members
     topMembers.innerHTML = '';
-    (data.topMembers || []).forEach(m => topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.value}</span></div>`);
+    (data.topMembers || []).forEach(m => {
+      topMembers.innerHTML += `<div class="row"><span>${m.name}</span><span>${m.count}</span></div>`;
+    });
 
-    new Chart(activityChart, {
+    // Chart
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(activityChart, {
       type: 'line',
       data: {
         labels: data.chart?.labels || [],
@@ -338,11 +381,13 @@ async function loadAnalytics() {
       },
       options: { plugins: { legend: { display: false } } }
     });
+
   } catch (err) {
     console.error('Failed to load analytics:', err);
   }
 }
 
+// --------------------------
 (async () => {
   const loaded = await loadGuildInfo();
   if (loaded) loadAnalytics();
