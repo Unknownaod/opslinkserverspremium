@@ -272,7 +272,7 @@ function setRange(r, event) {
 // ---------------------------
 function renderDelta(elem, value, unit = '') {
   const abs = Math.abs(value);
-  if (value === 0) {
+  if (value === 0 || value === null || value === undefined) {
     elem.textContent = 'No change since last period';
     elem.className = 'delta';
   } else {
@@ -322,9 +322,10 @@ async function loadAnalytics() {
     });
     const data = await res.json();
 
+    // Main stats
     elements.members.textContent = data.members?.current ?? 0;
     elements.messages.textContent = data.messages?.current ?? 0;
-    elements.voice.textContent = Math.round(data.voice?.current ?? 0); // total minutes
+    elements.voice.textContent = Math.round(data.voice?.minutes ?? 0);
     elements.joins.textContent = data.joins?.current ?? 0;
     elements.textChannels.textContent = data.textChannelsCount ?? 0;
     elements.voiceChannels.textContent = data.voiceChannelsCount ?? 0;
@@ -333,9 +334,10 @@ async function loadAnalytics() {
     elements.boosts.textContent = data.boosts ?? 0;
     elements.afkMembers.textContent = data.afkMembers ?? 0;
 
+    // Deltas
     renderDelta(elements.membersDelta, data.members?.delta ?? 0);
     renderDelta(elements.messagesDelta, data.messages?.delta ?? 0);
-    renderDelta(elements.voiceDelta, data.voice?.delta ?? 0, 'minutes'); // specify unit
+    renderDelta(elements.voiceDelta, data.voice?.delta ?? 0, 'minutes');
     renderDelta(elements.joinsDelta, data.joins?.delta ?? 0);
 
     // Top Channels
@@ -359,18 +361,20 @@ async function loadAnalytics() {
     ];
 
     charts.forEach(c => {
-      if (!c.ctx) return;
+      if (!c.ctx || !c.data) return;
       if (chartInstances[c.key]) chartInstances[c.key].destroy();
+
       const datasets = c.fields.map(f => ({
         label: f.charAt(0).toUpperCase() + f.slice(1),
-        data: c.data[f] || [],
+        data: Array.isArray(c.data[f]) ? c.data[f] : [],
         borderColor: f === 'members' ? '#4ea1ff' : f === 'messages' ? '#22c55e' : f === 'voiceMinutes' ? '#ef4444' : f === 'joins' ? '#fbbf24' : '#d946ef',
         backgroundColor: 'rgba(78,161,255,0.2)',
         tension: 0.4
       }));
+
       chartInstances[c.key] = new Chart(c.ctx, {
         type: c.type,
-        data: { labels: c.data.labels || [], datasets },
+        data: { labels: Array.isArray(c.data.labels) ? c.data.labels : [], datasets },
         options: { plugins: { legend: { display: true } }, responsive: true, maintainAspectRatio: false }
       });
     });
@@ -387,7 +391,7 @@ async function loadAnalytics() {
   const ok = await loadGuildInfo();
   if (ok) loadAnalytics();
 })();
-setInterval(loadAnalytics, 30000);
+setInterval(loadAnalytics, 30_000);
 </script>
 
 </body>
