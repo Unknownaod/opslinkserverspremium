@@ -190,6 +190,70 @@ canvas { height: 260px!important; }
     </div>
   </div>
 </div>
+  <div id="settingPage" class="section">
+  <h2>Settings</h2>
+
+  <!-- Server Info Card -->
+  <div class="card full" style="margin-bottom: 24px;">
+    <h3>Server Info</h3>
+    <div class="list" style="gap: 12px;">
+      <div class="row">
+        <span>Server Name:</span>
+        <strong id="settingServerName">—</strong>
+      </div>
+      <div class="row">
+        <span>Server ID:</span>
+        <strong id="settingServerId">—</strong>
+      </div>
+      <div class="row">
+        <span>Server Icon:</span>
+        <img id="settingServerIcon" src="assets/avatar.png" alt="Server Icon" style="width:36px; height:36px; border-radius:8px; border:1px solid var(--border);">
+      </div>
+    </div>
+  </div>
+
+<div id="settingPage" class="section">
+  <h2>Settings</h2>
+
+  <!-- Server Info Card -->
+  <div class="card full" style="margin-bottom: 24px;">
+    <h3>Server Info</h3>
+    <div class="list" style="gap: 12px;">
+      <div class="row">
+        <span>Server Name:</span>
+        <strong id="settingServerName">—</strong>
+      </div>
+      <div class="row">
+        <span>Server ID:</span>
+        <strong id="settingServerId">—</strong>
+      </div>
+      <div class="row">
+        <span>Server Icon:</span>
+        <img id="settingServerIcon" src="assets/avatar.png" alt="Server Icon" style="width:36px; height:36px; border-radius:8px; border:1px solid var(--border);">
+      </div>
+    </div>
+  </div>
+
+  <!-- Snapshots Actions Card -->
+  <div class="card full">
+    <h3>Server Snapshots</h3>
+    <p style="color: var(--muted); margin-bottom: 12px;">
+      You can reset or delete all server snapshots. This will permanently delete snapshot data for this server.
+    </p>
+    <div class="list" style="gap:12px;">
+      <div class="row">
+        <button id="resetSnapshots" style="padding:12px 20px; background: var(--red); color:white; border:none; border-radius:12px; cursor:pointer;">
+          Delete All Snapshots
+        </button>
+      </div>
+      <div class="row">
+        <button id="resetRecentSnapshots" style="padding:12px 20px; background: #f59e0b; color:white; border:none; border-radius:12px; cursor:pointer;">
+          Reset Last 30 Days
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div id="messages" class="section"><canvas id="messagesChart"></canvas></div>
 <div id="membersPage" class="section"><canvas id="membersChart"></canvas></div>
@@ -256,6 +320,19 @@ function nav(section, event) {
   document.getElementById(section).classList.add('active');
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
+
+  // Update page title
+  const titles = {
+    overview: 'Overview',
+    messages: 'Messages',
+    membersPage: 'Members',
+    voicePage: 'Voice',
+    settingPage: 'Settings'
+  };
+  document.getElementById('pageTitle').textContent = titles[section] || '';
+
+  // If settings page, load server info
+  if (section === 'settingPage') loadSettingsInfo();
 }
 
 // ---------------------------
@@ -299,16 +376,27 @@ async function loadGuildInfo() {
 
     serverId = server.discordServerId;
 
+    // Update sidebar
     document.getElementById('serverName').textContent = server.name;
     document.getElementById('serverIcon').src = server.logo || 'https://via.placeholder.com/52';
     document.getElementById('username').textContent = user.discordUsername;
     document.getElementById('userRole').textContent = user.role?.toUpperCase();
     document.getElementById('userAvatar').src = `https://cdn.discordapp.com/avatars/${user.discordUserID}/${user.discordAvatar}.png`;
+    
     return true;
   } catch (err) {
     console.error('Failed to load server/user info:', err);
     return false;
   }
+}
+
+// ---------------------------
+// LOAD SETTINGS INFO
+// ---------------------------
+function loadSettingsInfo() {
+  document.getElementById('settingServerName').textContent = document.getElementById('serverName').textContent;
+  document.getElementById('settingServerId').textContent = serverId;
+  document.getElementById('settingServerIcon').src = document.getElementById('serverIcon').src;
 }
 
 // ---------------------------
@@ -399,6 +487,41 @@ async function loadAnalytics() {
 }
 
 // ---------------------------
+// SNAPSHOT BUTTONS
+// ---------------------------
+document.getElementById('resetSnapshots')?.addEventListener('click', async () => {
+  if (!confirm("⚠️ Are you sure? This will DELETE ALL snapshots for this server permanently!")) return;
+  try {
+    const res = await fetch(`${BACKEND}/api/snapshots/${serverId}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error(`Failed: ${res.status}`);
+    alert("✅ All snapshots deleted successfully.");
+    loadAnalytics();
+  } catch (err) {
+    console.error(err);
+    alert("❌ Failed to delete snapshots. See console for details.");
+  }
+});
+
+document.getElementById('resetRecentSnapshots')?.addEventListener('click', async () => {
+  if (!confirm("⚠️ Are you sure? This will RESET snapshots from the last 30 days!")) return;
+  try {
+    const res = await fetch(`${BACKEND}/api/snapshots/${serverId}?range=30d`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) throw new Error(`Failed: ${res.status}`);
+    alert("✅ Last 30 days snapshots reset successfully.");
+    loadAnalytics();
+  } catch (err) {
+    console.error(err);
+    alert("❌ Failed to reset snapshots. See console for details.");
+  }
+});
+
+// ---------------------------
 // INIT
 // ---------------------------
 (async () => {
@@ -412,4 +535,3 @@ setInterval(loadAnalytics, 30_000);
 
 </body>
 </html>
-
