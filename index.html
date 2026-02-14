@@ -159,45 +159,22 @@ body::before{
 // ===== STARS GENERATOR =====
 const starsContainer = document.querySelector('.stars');
 const starCount = 120;
-for (let i = 0; i < starCount; i++) {
+for(let i=0;i<starCount;i++){
   const star = document.createElement('div');
   star.classList.add('star');
-  const size = Math.random() * 3 + 1;
+  const size = Math.random()*3+1;
   star.style.width = `${size}px`;
   star.style.height = `${size}px`;
-  star.style.top = `${Math.random() * 100}%`;
-  star.style.left = `${Math.random() * 100}%`;
-  star.style.animationDuration = `${Math.random() * 5 + 3}s`;
+  star.style.top = `${Math.random()*100}%`;
+  star.style.left = `${Math.random()*100}%`;
+  star.style.animationDuration = `${Math.random()*5+3}s`;
   starsContainer.appendChild(star);
 }
 
-// ===== HELPERS =====
-function parseJwt(token) {
-  try { return JSON.parse(atob(token.split('.')[1])); }
-  catch { return null; }
-}
-
-async function validateToken(token) {
-  const decoded = parseJwt(token);
-  if (!decoded?.id || !decoded?.discordUsername) return false;
-
-  // Optional: verify token against backend
-  try {
-    const res = await fetch('https://opslinkservers-backend.onrender.com/api/auth/validate-token', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) return false;
-    const data = await res.json();
-    // Check tokenVersion match
-    if (decoded.tokenVersion !== data.tokenVersion) return false;
-    return true;
-  } catch { return false; }
-}
-
 // ===== LOGIN HANDLER =====
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{
   e.preventDefault();
-
+  
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value.trim();
   const errorDiv = document.getElementById('errorMsg');
@@ -207,41 +184,43 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   try {
     const res = await fetch('https://opslinkservers-backend.onrender.com/api/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type':'application/json' },
       body: JSON.stringify({ email, password })
     });
 
     const data = await res.json();
 
-    if (res.ok && data.token) {
-      // Validate token before storing
-      const valid = await validateToken(data.token);
-      if (!valid) throw new Error('Invalid token received from server.');
-
-      // Store valid token
+    if(res.ok && data.token){
+      // Store token and user info
       localStorage.setItem('opslinkToken', data.token);
-      window.location.href = 'guilds.html';
+      localStorage.setItem('opslinkUser', JSON.stringify(data.user));
+
+      // Success feedback
+      errorDiv.style.display = 'block';
+      errorDiv.style.color = 'lime';
+      errorDiv.innerText = 'Login successful! Redirecting...';
+
+      setTimeout(()=> window.location.href = 'guilds.html', 1200);
       return;
     }
 
     // Email not verified
-    if (res.status === 403 && data.error?.includes('verify your email')) {
+    if(res.status === 403 && data.error?.includes('verify your email')){
       errorDiv.innerHTML = `
         ${data.error} <br>
         <a href="#" id="resend">Resend Verification Email</a>
       `;
       errorDiv.style.display = 'block';
-
-      document.getElementById('resend').addEventListener('click', async () => {
+      document.getElementById('resend').addEventListener('click', async ()=>{
         try {
           const resendRes = await fetch('https://opslinkservers-backend.onrender.com/api/auth/resend-verification', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type':'application/json' },
             body: JSON.stringify({ email })
           });
           const resendData = await resendRes.json();
           alert(resendData.message || 'Verification email resent');
-        } catch (err) {
+        } catch(err){
           console.error(err);
           alert('Failed to resend verification email');
         }
@@ -249,25 +228,18 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       return;
     }
 
+    // Other errors
+    errorDiv.style.display = 'block';
+    errorDiv.style.color = 'var(--bleed-red)';
     errorDiv.innerText = data.error || 'Login failed';
-    errorDiv.style.display = 'block';
 
-  } catch (err) {
+  } catch(err){
     console.error(err);
-    errorDiv.innerText = err.message || 'Network error. Try again later.';
     errorDiv.style.display = 'block';
+    errorDiv.style.color = 'var(--bleed-red)';
+    errorDiv.innerText = 'Network error. Try again later.';
   }
 });
-
-// ===== AUTO-REDIRECT IF ALREADY LOGGED IN =====
-(async function autoRedirect() {
-  const token = localStorage.getItem('opslinkToken');
-  if (!token) return;
-
-  const valid = await validateToken(token);
-  if (valid) window.location.href = 'guilds.html';
-  else localStorage.removeItem('opslinkToken');
-})();
 </script>
 
 
