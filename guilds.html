@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>OpsLink Servers</title>
+
+<link href="https://fonts.cdnfonts.com/css/satoshi" rel="stylesheet">
+
+<style>
+:root{
+  --bleed-background-1000:#0b0f14;
+  --bleed-background-900:#0f141b;
+  --bleed-background-800:#12161c;
+  --bleed-border:#1f2630;
+  --bleed-text:#f8fafc;
+  --bleed-muted:#8b949e;
+  --bleed-blue:#4ea1ff;
+  --bleed-blue-glow:rgba(78,161,255,.25);
+  --bleed-green:#22c55e;
+  --bleed-yellow:#facc15;
+  --bleed-red:#ef4444;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Satoshi',sans-serif;}
+html,body{height:100%;}
+
+body{
+  background:
+    radial-gradient(circle at 15% 20%, rgba(78,161,255,.06), transparent 35%),
+    radial-gradient(circle at 85% 80%, rgba(78,161,255,.04), transparent 40%),
+    linear-gradient(180deg,var(--bleed-background-900),var(--bleed-background-1000));
+  color:var(--bleed-text);
+}
+
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background-image:url("https://grainy-gradients.vercel.app/noise.svg");
+  opacity:.03;
+  pointer-events:none;
+}
+
+/* ===== STARS ===== */
+.stars{position:fixed;inset:0;pointer-events:none;z-index:0;}
+.star{
+  position:absolute;
+  background:white;
+  border-radius:50%;
+  opacity:.6;
+  animation:twinkle linear infinite;
+}
+@keyframes twinkle{
+  0%,100%{opacity:.2}
+  50%{opacity:.8}
+}
+
+/* ===== NAV ===== */
+nav{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:28px 80px;
+  z-index:1;
+  position:relative;
+}
+.logo{font-weight:600;letter-spacing:.5px;}
+.logout{
+  color:var(--bleed-muted);
+  cursor:pointer;
+  font-size:14px;
+}
+.logout:hover{color:white}
+
+/* ===== PAGE ===== */
+.page{
+  max-width:1200px;
+  margin:80px auto;
+  padding:0 40px;
+  position:relative;
+  z-index:1;
+}
+
+.page h1{
+  font-size:42px;
+  margin-bottom:12px;
+}
+.page p{
+  color:var(--bleed-muted);
+  margin-bottom:40px;
+}
+
+/* ===== GRID ===== */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+  gap:30px;
+}
+
+.card{
+  background:var(--bleed-background-800);
+  border:1px solid var(--bleed-border);
+  border-radius:20px;
+  padding:25px;
+  transition:.3s ease;
+}
+.card:hover{
+  border-color:var(--bleed-blue);
+  box-shadow:0 0 45px rgba(78,161,255,.12);
+}
+
+.server-header{
+  display:flex;
+  align-items:center;
+  gap:15px;
+  margin-bottom:15px;
+}
+
+.server-header img{
+  width:56px;
+  height:56px;
+  border-radius:14px;
+  object-fit:cover;
+}
+
+.server-name{
+  font-size:18px;
+  font-weight:600;
+}
+
+.server-desc{
+  font-size:14px;
+  color:var(--bleed-muted);
+  margin-bottom:20px;
+  line-height:1.6;
+}
+
+.meta{
+  display:flex;
+  justify-content:space-between;
+  font-size:13px;
+  margin-bottom:20px;
+}
+
+.status{
+  font-weight:600;
+}
+.status.approved{color:var(--bleed-green);}
+.status.pending{color:var(--bleed-yellow);}
+.status.denied{color:var(--bleed-red);}
+
+/* ===== BUTTON ===== */
+.btn{
+  display:block;
+  width:100%;
+  text-align:center;
+  padding:12px;
+  border-radius:12px;
+  background:var(--bleed-blue);
+  color:white;
+  text-decoration:none;
+  font-weight:600;
+  box-shadow:0 0 35px var(--bleed-blue-glow);
+  transition:.2s ease;
+}
+.btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 55px var(--bleed-blue-glow);
+}
+
+/* ===== EMPTY ===== */
+.empty{
+  color:var(--bleed-muted);
+  text-align:center;
+  padding:60px 0;
+}
+</style>
+</head>
+<body>
+
+<div class="stars"></div>
+
+<nav>
+  <div class="logo">OpsLink Servers</div>
+  <div class="logout" onclick="logout()">Logout</div>
+</nav>
+
+<div class="page">
+  <h1>Your Servers</h1>
+  <p>Manage and monitor your submitted Discord servers.</p>
+
+  <div id="servers" class="grid"></div>
+</div>
+
+<script>
+/* ===== STARS ===== */
+const stars = document.querySelector('.stars');
+for(let i=0;i<120;i++){
+  const s=document.createElement('div');
+  s.className='star';
+  const size=Math.random()*3+1;
+  s.style.width=s.style.height=`${size}px`;
+  s.style.top=`${Math.random()*100}%`;
+  s.style.left=`${Math.random()*100}%`;
+  s.style.animationDuration=`${Math.random()*6+4}s`;
+  stars.appendChild(s);
+}
+
+/* ===== AUTH ===== */
+const token = localStorage.getItem('opslinkToken');
+if(!token){
+  window.location.href = 'login.html';
+}
+
+function logout(){
+  localStorage.removeItem('opslinkToken');
+  window.location.href = 'login.html';
+}
+
+/* ===== HELPERS ===== */
+function parseJwt(token){
+  try{
+    return JSON.parse(atob(token.split('.')[1]));
+  }catch{
+    return null;
+  }
+}
+
+/* ===== LOAD SERVERS ===== */
+(async function loadServers(){
+  const container = document.getElementById('servers');
+
+  try{
+    // decode discord username from JWT
+    const decoded = parseJwt(token);
+    if(!decoded?.discordUsername) throw new Error('Invalid token');
+
+    // get role
+    const roleRes = await fetch(
+      `https://opslinkservers-backend.onrender.com/servers/role/${encodeURIComponent(decoded.discordUsername)}`
+    );
+    const roleData = await roleRes.json();
+
+    const isAdmin = roleData.role === 'admin';
+
+    // choose endpoint
+    const endpoint = isAdmin
+      ? 'https://opslinkservers-backend.onrender.com/servers'
+      : 'https://opslinkservers-backend.onrender.com/servers/mine';
+
+    const res = await fetch(endpoint,{
+      headers:{ 'Authorization': `Bearer ${token}` }
+    });
+
+    if(res.status === 401) throw new Error('Unauthorized');
+
+    let servers = await res.json();
+
+    // admins only see approved servers
+    if(isAdmin){
+      servers = servers.filter(s => s.status === 'approved');
+    }
+
+    if(!servers.length){
+      container.innerHTML = `
+        <div class="empty">
+          No servers found.
+        </div>`;
+      return;
+    }
+
+    servers.forEach(s=>{
+      const card=document.createElement('div');
+      card.className='card';
+      card.innerHTML=`
+        <div class="server-header">
+          <img src="${s.logo}" alt="">
+          <div class="server-name">${s.name}</div>
+        </div>
+
+        <div class="server-desc">
+          ${s.description || 'No description provided.'}
+        </div>
+
+        <div class="meta">
+          <div>Members: ${s.members ?? 0}</div>
+          <div class="status ${s.status}">
+            ${s.status.toUpperCase()}
+          </div>
+        </div>
+
+        <a class="btn" href="dashboard.html?server=${s._id}">
+          View Dashboard
+        </a>
+      `;
+      container.appendChild(card);
+    });
+
+  }catch(err){
+    console.error(err);
+    localStorage.removeItem('opslinkToken');
+    window.location.href = 'login.html';
+  }
+})();
+</script>
+
+
+</body>
+</html>
