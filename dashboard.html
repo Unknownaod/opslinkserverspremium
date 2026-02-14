@@ -435,35 +435,51 @@ async function loadAnalytics() {
 // ---------------------------
 // SNAPSHOT BUTTONS
 // ---------------------------
-document.getElementById('resetSnapshots')?.addEventListener('click', async () => {
-  if (!confirm("⚠️ Are you sure? This will DELETE ALL snapshots for this server permanently!")) return;
-  try {
-    const url = new URL(`${BACKEND}/api/${serverId}/snapshots`);
-    url.searchParams.append('range', 'all');
-    const res = await fetch(url.toString(), {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) throw new Error(`Failed: ${res.status}`);
-    alert("✅ All snapshots deleted successfully.");
-    loadAnalytics();
-  } catch (err) { console.error(err); alert("❌ Failed to delete snapshots. See console for details."); }
-});
 
-document.getElementById('resetRecentSnapshots')?.addEventListener('click', async () => {
-  if (!confirm("⚠️ Are you sure? This will RESET snapshots from the last 30 days!")) return;
+async function deleteSnapshots(range, confirmMessage, successMessage) {
+  if (!confirm(confirmMessage)) return;
+
   try {
-    const url = new URL(`${BACKEND}/api/${serverId}/snapshots`);
-    url.searchParams.append('range', '30d');
+    // Update URL to match the analytics route
+    const url = new URL(`${BACKEND}/api/analytics/${serverId}/snapshots`);
+    url.searchParams.append('range', range);
+
     const res = await fetch(url.toString(), {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
+
     if (!res.ok) throw new Error(`Failed: ${res.status}`);
-    alert("✅ Last 30 days snapshots reset successfully.");
-    loadAnalytics();
-  } catch (err) { console.error(err); alert("❌ Failed to reset snapshots. See console for details."); }
-});
+
+    const data = await res.json();
+    alert(`✅ ${data.message || successMessage}`);
+
+    // Refresh analytics if function exists
+    if (typeof loadAnalytics === 'function') loadAnalytics();
+  } catch (err) {
+    console.error(err);
+    alert('❌ Failed to delete snapshots. See console for details.');
+  }
+}
+
+// Delete all snapshots
+document.getElementById('resetSnapshots')?.addEventListener('click', () =>
+  deleteSnapshots(
+    'all',
+    '⚠️ Are you sure? This will DELETE ALL snapshots for this server permanently!',
+    'All snapshots deleted successfully.'
+  )
+);
+
+// Reset snapshots from last 30 days
+document.getElementById('resetRecentSnapshots')?.addEventListener('click', () =>
+  deleteSnapshots(
+    '30d',
+    '⚠️ Are you sure? This will RESET snapshots from the last 30 days!',
+    'Last 30 days snapshots reset successfully.'
+  )
+);
+
 
 
 // ---------------------------
