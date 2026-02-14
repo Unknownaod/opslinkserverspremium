@@ -252,14 +252,17 @@ canvas{height:260px!important}
 
 <script>
 const token = localStorage.getItem('opslinkToken');
-if(!token) location.href='login.html';
+if (!token) location.href = 'login.html';
 
 let range = '7d';
 const serverId = new URLSearchParams(location.search).get('server');
-const API = 'https://opslinkserversapi.onrender.com';
+
+// Backends
+const BACKEND = 'https://opslinkservers-backend.onrender.com'; // guild/server info
+const ANALYTICS = 'https://opslinkserversapi.onrender.com';    // analytics data
 
 // ================= NAVIGATION =================
-function nav(id){
+function nav(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
@@ -267,7 +270,7 @@ function nav(id){
   pageTitle.textContent = id.charAt(0).toUpperCase() + id.slice(1);
 }
 
-function setRange(r){
+function setRange(r) {
   range = r;
   document.querySelectorAll('.time button').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
@@ -275,19 +278,28 @@ function setRange(r){
 }
 
 // ================= DELTA HELPER =================
-function delta(el, val){
+function delta(el, val) {
   el.textContent = `${val >= 0 ? '▲' : '▼'} ${Math.abs(val)}%`;
   el.className = `delta ${val >= 0 ? 'up' : 'down'}`;
 }
 
-// ================= FETCH SERVER INFO =================
+// ================= FETCH SERVER INFO (guilds.html logic) =================
 async function getServerInfo() {
   try {
-    const res = await fetch(`${API}/servers/mine`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const userStr = localStorage.getItem('opslinkUser');
+    const user = JSON.parse(userStr || '{}');
+    const isAdmin = user.role === 'admin';
+
+    const endpoint = isAdmin
+      ? `${BACKEND}/servers`        // admins see all servers
+      : `${BACKEND}/servers/mine`;  // users see their own
+
+    const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error('Failed to fetch servers');
+
     const servers = await res.json();
     const server = servers.find(s => s._id === serverId);
+
     if (!server) throw new Error('Server not found or access denied');
     return server;
   } catch (err) {
@@ -307,7 +319,7 @@ async function load() {
   serverIcon.src = server.logo || 'https://via.placeholder.com/80';
 
   try {
-    const res = await fetch(`${API}/analytics/${serverId}/overview?range=${range}`, {
+    const res = await fetch(`${ANALYTICS}/analytics/${serverId}/overview?range=${range}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) throw new Error('Failed to fetch analytics');
@@ -346,7 +358,10 @@ async function load() {
     if (activityChart && data.chart) {
       new Chart(activityChart, {
         type: 'line',
-        data: { labels: data.chart.labels || [], datasets: [{ data: data.chart.data || [], borderColor: '#4ea1ff', tension: 0.4 }] },
+        data: {
+          labels: data.chart.labels || [],
+          datasets: [{ data: data.chart.data || [], borderColor: '#4ea1ff', tension: 0.4 }]
+        },
         options: { plugins: { legend: { display: false } } }
       });
     }
@@ -360,6 +375,7 @@ async function load() {
 // ================= INIT =================
 load();
 </script>
+
 
 
 </body>
