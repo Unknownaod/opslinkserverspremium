@@ -291,7 +291,8 @@ canvas { height: 260px!important; }
 const token = localStorage.getItem('opslinkToken');
 if (!token) location.href = 'login.html';
 
-const serverId = new URLSearchParams(location.search).get('server');
+// Get server param from URL
+let serverId = new URLSearchParams(location.search).get('server'); 
 const BACKEND = 'https://opslinkservers-backend.onrender.com';
 let range = '7d';
 
@@ -348,15 +349,20 @@ async function loadGuildInfo() {
     const user = JSON.parse(userStr || '{}');
 
     const endpoint = user.role === 'admin'
-      ? `${BACKEND}/api/servers/all`
-      : `${BACKEND}/api/servers/mine`;
+      ? `${BACKEND}/api/servers`    // admins see all approved servers
+      : `${BACKEND}/api/servers/mine`; // users see only their servers
 
     const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` }});
     if (!res.ok) throw new Error('Failed to fetch servers');
 
     const servers = await res.json();
-    const server = servers.find(s => s._id === serverId);
+
+    // Find server by Discord Server ID or fallback to original param
+    const server = servers.find(s => s.discordServerId === serverId || s._id === serverId);
     if (!server) throw new Error('Server not found');
+
+    // Update serverId to Discord ID for analytics
+    serverId = server.discordServerId || serverId;
 
     document.getElementById('serverName').textContent = server.name;
     document.getElementById('serverIcon').src = server.logo || 'https://via.placeholder.com/52';
