@@ -362,7 +362,7 @@ function renderDelta(elem, value, unit = '') {
 async function loadGuildInfo() {
   try {
     const user = JSON.parse(localStorage.getItem('opslinkUser') || '{}');
-    const endpoint = user.role === 'admin' ? `${BACKEND}/api/servers` : `${BACKEND}/api/servers/mine`;
+    const endpoint = (user.role === 'admin' || user.role === 'management') ? `${BACKEND}/api/servers` : `${BACKEND}/api/servers/mine`;
     const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } });
     const servers = await res.json();
     const server = servers.find(s => s.discordServerId === serverId || s._id === serverId);
