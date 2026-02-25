@@ -253,7 +253,7 @@ function renderServers(servers) {
       </div>
 
       <!-- Updated: Use discordServerId for analytics/dashboard -->
-      <a class="btn" href="dashboard.html?server=${s.discordServerId || s._id}">View Dashboard</a>
+      <a class="btn" href="/dashboard?server=${s.discordServerId || s._id}">View Dashboard</a>
     `;
 
     container.appendChild(card);
