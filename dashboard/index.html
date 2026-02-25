@@ -101,12 +101,15 @@ canvas { height: 260px!important; }
     <img id="serverIcon" src="assets/avatar.png" alt="Server Icon">
     <div class="server-name" id="serverName">Loading…</div>
   </div>
+
+  <div class="user">
     <img id="userAvatar" src="assets/avatar.png" alt="User Avatar">
     <div>
       <div class="user-name" id="username">—</div>
       <div class="user-role" id="userRole">—</div>
     </div>
   </div>
+
   <div class="nav">
     <button onclick="nav('/guilds/', event)"><i class='bx bx-arrow-big-left'></i>Back to Servers</button>
     <button class="active" onclick="nav('overview', event)"><i class='bx bx-home'></i>Overview</button>
@@ -114,9 +117,9 @@ canvas { height: 260px!important; }
     <button onclick="nav('membersPage', event)"><i class='bx bx-group'></i>Members</button>
     <button onclick="nav('voicePage', event)"><i class='bx bx-headphone'></i>Voice</button>
     <button onclick="nav('settingPage', event)"><i class='bx bx-cog'></i>Settings</button>
-   <button onclick="window.open('https://discord.com/oauth2/authorize?client_id=1472039095743021097&permissions=36785280&scope=bot', '_blank')">
-    <i class='bx bx-plus'></i> Add the Bot
-   </button>
+    <button onclick="window.open('https://discord.com/oauth2/authorize?client_id=1472039095743021097&permissions=36785280&scope=bot', '_blank')">
+      <i class='bx bx-plus'></i> Add the Bot
+    </button>
   </div>
 </div>
 
